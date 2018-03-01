@@ -13,6 +13,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
@@ -48,8 +50,9 @@ public class ConnectActivity extends UsrBaseActivity {
     private Receiver receiver;
     private ProgressBar progressBar;
     private SharedPreferences mSharedPreferences;
+    private SharedPreferences.Editor editor;
     private  Button btn_get_path;
-    private TextView  file_path;
+    private TextView  device_id;
     /**
      * 使用私钥进行解密
      */
@@ -59,7 +62,6 @@ public class ConnectActivity extends UsrBaseActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
-        mSharedPreferences = getSharedPreferences("userInfo", MODE_PRIVATE);
     }
 
     @Override
@@ -76,10 +78,12 @@ public class ConnectActivity extends UsrBaseActivity {
     @Override
     public void initView() {
         super.initView();
+        mSharedPreferences = getSharedPreferences("keypath", MODE_PRIVATE);
+        editor = mSharedPreferences.edit();
         con_btn_connect = (Button) findViewById(R.id.con_btn_connect);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         btn_get_path = (Button)   findViewById(R.id.btn_choosekey);
-        file_path  = (TextView) findViewById(R.id.textView);
+        device_id  = (TextView) findViewById(R.id.textView);
         btn_get_path.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -94,10 +98,10 @@ public class ConnectActivity extends UsrBaseActivity {
             public void onClick(View v) {
                 progressBar.setVisibility(View.VISIBLE);
                 con_btn_connect.setText("正在启动宇时4G数传...");
-                con_btn_connect.setEnabled(false);
+                con_btn_connect.setClickable(false);
                 con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
                 String uname = "18780126369";
-                String upw = "5234971";
+                String upw = "5234970";
                 Bundle bundle = new Bundle();
                 bundle.putString("uname", uname);
                 bundle.putString("upw", upw);
@@ -105,9 +109,28 @@ public class ConnectActivity extends UsrBaseActivity {
                 startServiceWithParm(UsrCloudClientService.class, bundle);
             }
         });
-        con_btn_connect.performClick();
+        con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
+        con_btn_connect.setClickable(false);
+        con_btn_connect.setText("请先选择keyconfig文件！");
+        progressBar.setVisibility(View.INVISIBLE);
+       String deviceID = mSharedPreferences.getString("deviceID","-1");
+       if(deviceID!="-1")
+       {
+           device_id.setText(deviceID);
+           myHandler.sendEmptyMessage(0);
+       }
     }
-
+    Handler myHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            editor.putString("deviceID",device_id.getText().toString());
+            editor.commit();
+            con_btn_connect.setClickable(true);
+            con_btn_connect.setText("启动宇时4G数传");
+            progressBar.setVisibility(View.VISIBLE);
+            con_btn_connect.setBackgroundResource(R.drawable.button_shape);
+            super.handleMessage(msg);
+        }
+    };
     String path;
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -115,36 +138,44 @@ public class ConnectActivity extends UsrBaseActivity {
             Uri uri = data.getData();
             if ("file".equalsIgnoreCase(uri.getScheme())){//使用第三方应用打开
                 path = uri.getPath();
-                file_path.setText(path);
-                String keyconfig= readFile(path);
-                try
-                {
-                  String rs = new String(RsaHelper.decryptData(
-                            Base64Helper.decode(keyconfig), privateKey), "UTF-8");
-                    file_path.setText(rs);
-                    Log.e("encoded", rs);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-                Toast.makeText(this,path,Toast.LENGTH_SHORT).show();
+                get_keyconfig_and_jump(path);
                 return;
             }
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {//4.4以后
                 path = getPath(this, uri);
-                String keyconfig= readFile(path);
-                Toast.makeText(this,path,Toast.LENGTH_SHORT).show();
+                get_keyconfig_and_jump(path);
             } else {//4.4以下下系统调用方法
                 path = getRealPathFromURI(uri);
-                file_path.setText(path);
-                Toast.makeText(ConnectActivity.this, path, Toast.LENGTH_SHORT).show();
+                get_keyconfig_and_jump(path);
             }
         }
     }
 
+   private void get_keyconfig_and_jump(String path)
+   {
+       String keyconfig= readFile(path);
+       if(keyconfig == null)
+       {
+           Toast.makeText(this,"读取keyconfig文件失败！",Toast.LENGTH_SHORT).show();
+           return;
+       }
+       try
+       {
+           String rs = new String(RsaHelper.decryptData(
+                   Base64Helper.decode(keyconfig), privateKey), "UTF-8");
+           device_id.setText(rs);
+           myHandler.sendEmptyMessage(0);
+           Log.e("encoded", rs);
+       }
+       catch (Exception e)
+       {
+           e.printStackTrace();
+           Toast.makeText(this,"读取keyconfig文件失败！",Toast.LENGTH_SHORT).show();
+           return;
+       }
 
-    //从文件从读取加密后的字符串
+   }
+     //从文件从读取加密后的字符串
     private String readFile(String filePath){
         if(filePath == null) return null;
         String file_data =new String();
@@ -321,7 +352,7 @@ public class ConnectActivity extends UsrBaseActivity {
                 startActivity(new Intent(ConnectActivity.this, MainActivity.class));
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
                 Toast.makeText(ConnectActivity.this, "宇时4G数传启动失败\r\n请检查网络是否畅通!", Toast.LENGTH_SHORT).show();
-                con_btn_connect.setEnabled(true);
+                con_btn_connect.setClickable(true);
                 con_btn_connect.setText("启动宇时4G数传");
                 progressBar.setVisibility(View.INVISIBLE);
                 con_btn_connect.setBackgroundResource(R.drawable.button_shape);
