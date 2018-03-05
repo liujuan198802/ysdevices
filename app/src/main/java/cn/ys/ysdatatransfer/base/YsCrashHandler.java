@@ -32,11 +32,11 @@ import java.util.Map;
  * Created by shizhiyuan on 2017/7/19.
  */
 
-public class UsrCrashHandler implements Thread.UncaughtExceptionHandler {
+public class YsCrashHandler implements Thread.UncaughtExceptionHandler {
     //上下文
     private Context mContext;
     public static final String TAG = "CrashHandler";
-    private static UsrCrashHandler mCrashHandler = null;
+    private static YsCrashHandler mCrashHandler = null;
 
     //系统默认的UncaughtException处理类
     private Thread.UncaughtExceptionHandler mDefaultHandler;
@@ -48,7 +48,7 @@ public class UsrCrashHandler implements Thread.UncaughtExceptionHandler {
     private static final String ALERT = "很抱歉,程序出现异常,即将退出";
 
     //私有化构造函数
-    private UsrCrashHandler() {
+    private YsCrashHandler() {
 
     }
 
@@ -57,11 +57,11 @@ public class UsrCrashHandler implements Thread.UncaughtExceptionHandler {
      *
      * @return
      */
-    public static UsrCrashHandler getmusrCrashHandler() {
+    public static YsCrashHandler getmusrCrashHandler() {
         if (mCrashHandler == null) {
-            synchronized (UsrCrashHandler.class) {
+            synchronized (YsCrashHandler.class) {
                 if (mCrashHandler == null) {
-                    mCrashHandler = new UsrCrashHandler();
+                    mCrashHandler = new YsCrashHandler();
                 }
             }
         }

@@ -11,10 +11,10 @@ import static android.content.ContentValues.TAG;
  * Created by shizhiyuan on 2017/7/19.
  */
 
-public class UsrApplication extends Application {
+public class YsApplication extends Application {
 
-    private UsrCrashHandler usrCrashHandler;
-    private static UsrApplication instance;
+    private YsCrashHandler ysCrashHandler;
+    private static YsApplication instance;
     private static Toast toast;
     public   static  String USERNAME="";
 
@@ -27,7 +27,7 @@ public class UsrApplication extends Application {
 
 
     //Application 的回掉方法
-    public static final UsrApplication getInstance() {
+    public static final YsApplication getInstance() {
         return instance;
     }
 
@@ -35,9 +35,9 @@ public class UsrApplication extends Application {
      * 初始化异常处理类
      */
     private void initUsrCrashHandler() {
-        usrCrashHandler = UsrCrashHandler.getmusrCrashHandler();
-        if (usrCrashHandler != null) {
-            usrCrashHandler.initCrashHandler(this);
+        ysCrashHandler = YsCrashHandler.getmusrCrashHandler();
+        if (ysCrashHandler != null) {
+            ysCrashHandler.initCrashHandler(this);
         }
     }
 

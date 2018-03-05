@@ -26,17 +26,17 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import java.io.IOException;
 
 import cn.ys.ysdatatransfer.R;
-import cn.ys.ysdatatransfer.base.UsrBaseActivity;
-import cn.ys.ysdatatransfer.business.UsrCloudClientService;
+import cn.ys.ysdatatransfer.base.YsBaseActivity;
+import cn.ys.ysdatatransfer.business.YsCloudClientService;
 
 
-public class MainActivity extends UsrBaseActivity implements View.OnClickListener {
+public class MainActivity extends YsBaseActivity implements View.OnClickListener {
     private Button main_btn_stop;
     private Button main_btn_start;
     private Button main_btn_disconnent;
     private Button main_btn_clear;
     private String deviceid;
-    private UsrCloudClientService myService;
+    private YsCloudClientService myService;
     private TextView local_port;
     private TextView local_ip;
     private TextView txt_tcp_data_count;
@@ -76,7 +76,7 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            myService = ((UsrCloudClientService.MyBinder) service).getService();
+            myService = ((YsCloudClientService.MyBinder) service).getService();
             myService.set_deviceId(deviceid);
         }
 
@@ -104,7 +104,7 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
     protected void onStart() {
         super.onStart();
         setListener();
-        final Intent intent = new Intent(this, UsrCloudClientService.class);
+        final Intent intent = new Intent(this, YsCloudClientService.class);
         bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
         timer_handler.postDelayed(runnable, 400);
         onSubscribeReceiver = new OnSubscribeReceiver();
@@ -204,7 +204,7 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
             case R.id.main_btn_disconnent:
                 try {
                     if (myService.DisConnectUnCheck()) {
-                        Intent intent = new Intent(this, UsrCloudClientService.class);
+                        Intent intent = new Intent(this, YsCloudClientService.class);
                         stopService(intent);
                         timer_handler.removeCallbacks(runnable);
                         this.unbindService(serviceConnection);
@@ -242,7 +242,7 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
     public void onBackPressed() {
         super.onBackPressed();
         if (myService.doDisConnect()) {
-            Intent intent = new Intent(this, UsrCloudClientService.class);
+            Intent intent = new Intent(this, YsCloudClientService.class);
             stopService(intent);
             timer_handler.removeCallbacks(runnable);
             this.unbindService(serviceConnection);

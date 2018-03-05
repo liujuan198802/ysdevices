@@ -35,16 +35,16 @@ import java.io.InputStreamReader;
 import java.security.PrivateKey;
 
 import cn.ys.ysdatatransfer.R;
-import cn.ys.ysdatatransfer.base.UsrBaseActivity;
-import cn.ys.ysdatatransfer.business.UsrCloudClientService;
+import cn.ys.ysdatatransfer.base.YsBaseActivity;
+import cn.ys.ysdatatransfer.business.YsCloudClientService;
 
-import static cn.ys.ysdatatransfer.base.UsrApplication.USERNAME;
+import static cn.ys.ysdatatransfer.base.YsApplication.USERNAME;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
  */
 
-public class ConnectActivity extends UsrBaseActivity {
+public class ConnectActivity extends YsBaseActivity {
 
 
     private Button con_btn_connect;
@@ -107,7 +107,7 @@ public class ConnectActivity extends UsrBaseActivity {
                 bundle.putString("uname", uname);
                 bundle.putString("upw", upw);
                 USERNAME=uname;
-                startServiceWithParm(UsrCloudClientService.class, bundle);
+                startServiceWithParm(YsCloudClientService.class, bundle);
             }
         });
         con_btn_connect.setBackgroundResource(R.drawable.cancleshape);

@@ -13,7 +13,7 @@ import android.widget.Toast;
  * Created by shizhiyuan on 2017/7/19.
  */
 
-public class UsrBaseActivity extends Activity {
+public class YsBaseActivity extends Activity {
 
     /**
      * 是否沉浸状态栏
@@ -91,7 +91,7 @@ public class UsrBaseActivity extends Activity {
      * @param clz
      */
     public void startActivity(Class<?> clz) {
-        startActivity(new Intent(UsrBaseActivity.this, clz));
+        startActivity(new Intent(YsBaseActivity.this, clz));
     }
     /**
      * [启动服务]
@@ -99,7 +99,7 @@ public class UsrBaseActivity extends Activity {
      * @param clz
      */
     public void startService(Class<?> clz) {
-        startService(new Intent(UsrBaseActivity.this, clz));
+        startService(new Intent(YsBaseActivity.this, clz));
     }
     /**
      * [携带数据的启动服务]

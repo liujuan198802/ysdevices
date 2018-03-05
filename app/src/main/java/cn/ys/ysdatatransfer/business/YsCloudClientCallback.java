@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import cn.usr.UsrCloudMqttCallbackAdapter;
-import cn.ys.ysdatatransfer.base.UsrApplication;
+import cn.ys.ysdatatransfer.base.YsApplication;
 
 import static android.content.ContentValues.TAG;
 import static cn.ys.ysdatatransfer.utils.BaseUtils.bytes2hex01;
@@ -16,9 +16,9 @@ import static cn.ys.ysdatatransfer.utils.BaseUtils.bytes2hex01;
  * Created by shizhiyuan on 2017/7/21.
  */
 
-public class UsrCloudClientCallback extends UsrCloudMqttCallbackAdapter {
+public class YsCloudClientCallback extends UsrCloudMqttCallbackAdapter {
 
-    private Context mcontext = UsrApplication.getInstance();
+    private Context mcontext = YsApplication.getInstance();
 
     @Override
     public void onConnectAck(int returnCode, String description) {

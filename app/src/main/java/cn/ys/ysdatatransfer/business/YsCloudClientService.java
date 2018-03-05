@@ -27,13 +27,13 @@ import static android.content.ContentValues.TAG;
  * Created by shizhiyuan on 2017/7/21.
  */
 
-public class UsrCloudClientService extends Service {
+public class YsCloudClientService extends Service {
 
 
     private static String uName = "";
     private static String uPW = "";
-    private UsrCloudClient usrCloudClient;
-    private UsrCloudClientCallback usrCloudClientCallback;
+    private YsCloudClient ysCloudClient;
+    private YsCloudClientCallback ysCloudClientCallback;
     private MyBinder mBinder = new MyBinder();
     private String deviceid="00009385000000000001";
     private long data_count_tcp = 0;
@@ -41,8 +41,8 @@ public class UsrCloudClientService extends Service {
     //客户端端口
     private static ArrayList<Socket> socketList = new ArrayList<Socket>();
 
-    public UsrCloudClientService getInstance() {
-        return UsrCloudClientService.this;
+    public YsCloudClientService getInstance() {
+        return YsCloudClientService.this;
     }
     //TCP 服务器的客户端记录
     public void set_deviceId(String deviceId) {
@@ -202,7 +202,7 @@ public class UsrCloudClientService extends Service {
                                if(deviceid!=null)
                             //发送数据到MQTT服务器端
                             try {
-                                UsrCloudClientService.this.publishForDevId(deviceid,new String(buffer,0,temp).getBytes());
+                                YsCloudClientService.this.publishForDevId(deviceid,new String(buffer,0,temp).getBytes());
                             }
                             catch (Exception e)
                             {
@@ -229,12 +229,12 @@ public class UsrCloudClientService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        usrCloudClientCallback = new UsrCloudClientCallback(){
+        ysCloudClientCallback = new YsCloudClientCallback(){
             @Override
             public void onReceiveEvent(int messageId, String topic, byte[] data) {
                 super.onReceiveEvent(messageId,topic,data);
                  data_count_mqtt += returnActualLength(data);
-                    for (Socket s : UsrCloudClientService.socketList)
+                    for (Socket s : YsCloudClientService.socketList)
                     {
                         try {
                         OutputStream os = s.getOutputStream();
@@ -242,13 +242,13 @@ public class UsrCloudClientService extends Service {
                       }
                     catch (Exception e)
                     {
-                        UsrCloudClientService.socketList.remove(s);
+                        YsCloudClientService.socketList.remove(s);
                         e.printStackTrace();
                     }
                     }
                 }
         };
-        usrCloudClient = new UsrCloudClient();
+        ysCloudClient = new YsCloudClient();
     }
 
     @Override
@@ -263,8 +263,8 @@ public class UsrCloudClientService extends Service {
     private void doClientConnection(String uname, String upw) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.Connect(uname, upw);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.Connect(uname, upw);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -274,8 +274,8 @@ public class UsrCloudClientService extends Service {
     public void doSubscribeForDevId(String devId) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.SubscribeForDevId(devId);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.SubscribeForDevId(devId);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -285,8 +285,8 @@ public class UsrCloudClientService extends Service {
     public void doSubscribeForUsername() {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.SubscribeForUsername();
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.SubscribeForUsername();
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -297,8 +297,8 @@ public class UsrCloudClientService extends Service {
     public void doSubscribeParsedByDevId(String devId) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.SubscribeParsedByDevId(devId);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.SubscribeParsedByDevId(devId);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -308,8 +308,8 @@ public class UsrCloudClientService extends Service {
     public void doSubscribeParsedForUsername() {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.SubscribeParsedForUsername();
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.SubscribeParsedForUsername();
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -319,8 +319,8 @@ public class UsrCloudClientService extends Service {
     public void doDisSubscribeforDevId(String devId) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.DisSubscribeforDevId(devId);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.DisSubscribeforDevId(devId);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -331,8 +331,8 @@ public class UsrCloudClientService extends Service {
     public void doDisSubscribeforuName() {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.DisSubscribeforuName();
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.DisSubscribeforuName();
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -343,8 +343,8 @@ public class UsrCloudClientService extends Service {
     public void doDisSubscribeParsedforDevId(String devId) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.DisSubscribeParsedforDevId(devId);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.DisSubscribeParsedforDevId(devId);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -354,8 +354,8 @@ public class UsrCloudClientService extends Service {
     public void doDisSubscribeParsedForUsername() {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.DisSubscribeParsedForUsername();
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.DisSubscribeParsedForUsername();
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -366,8 +366,8 @@ public class UsrCloudClientService extends Service {
     public void publishForDevId(String devId, byte[] data) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.publishForDevId(devId, data);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.publishForDevId(devId, data);
             } catch (MqttException e) {
                 e.printStackTrace();
 
@@ -378,8 +378,8 @@ public class UsrCloudClientService extends Service {
     public void publishParsedQueryDataPoint(String devId, String slaveIndex, String pointId) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.publishParsedQueryDataPoint(devId, slaveIndex, pointId);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.publishParsedQueryDataPoint(devId, slaveIndex, pointId);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -389,8 +389,8 @@ public class UsrCloudClientService extends Service {
     public void publishParsedSetDataPoint(String devId, String slaveIndex,  String pointId, String value) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.publishParsedSetDataPoint(devId, slaveIndex,  pointId, value);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.publishParsedSetDataPoint(devId, slaveIndex,  pointId, value);
             } catch (MqttException e) {
                 e.printStackTrace();
 
@@ -401,8 +401,8 @@ public class UsrCloudClientService extends Service {
     public void publishForuName(byte[] data) {
         if (isConnectIsNomarl()) {
             try {
-                usrCloudClient.setUsrCloudMqttCallback(usrCloudClientCallback);
-                usrCloudClient.publishForuName(data);
+                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+                ysCloudClient.publishForuName(data);
             } catch (MqttException e) {
                 e.printStackTrace();
 
@@ -413,7 +413,7 @@ public class UsrCloudClientService extends Service {
     public boolean doDisConnect() {
         if (isConnectIsNomarl()) {
             try {
-                return usrCloudClient.DisConnectUnCheck();
+                return ysCloudClient.DisConnectUnCheck();
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -423,7 +423,7 @@ public class UsrCloudClientService extends Service {
 
     public boolean DisConnectUnCheck() throws MqttException {
         if (isConnectIsNomarl()) {
-            return usrCloudClient.DisConnectUnCheck();
+            return ysCloudClient.DisConnectUnCheck();
         }
         return false;
     }
@@ -444,8 +444,8 @@ public class UsrCloudClientService extends Service {
 
 
     public class MyBinder extends Binder {
-        public UsrCloudClientService getService() {
-            return UsrCloudClientService.this;
+        public YsCloudClientService getService() {
+            return YsCloudClientService.this;
         }
     }
 

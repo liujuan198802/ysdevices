@@ -9,7 +9,7 @@ import cn.usr.UsrCloudMqttClientAdapter;
  * Created by shizhiyuan on 2017/7/21.
  */
 
-public class UsrCloudClient extends UsrCloudMqttClientAdapter {
+public class YsCloudClient extends UsrCloudMqttClientAdapter {
 
     @Override
     public void Connect(String userName, String passWord) throws MqttException {
