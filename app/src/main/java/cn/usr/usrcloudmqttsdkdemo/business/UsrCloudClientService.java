@@ -8,14 +8,18 @@ import android.net.NetworkInfo;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
-import cn.usr.UsrCloudMqttCallbackAdapter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
 
 import static android.content.ContentValues.TAG;
 
@@ -31,15 +35,206 @@ public class UsrCloudClientService extends Service {
     private UsrCloudClient usrCloudClient;
     private UsrCloudClientCallback usrCloudClientCallback;
     private MyBinder mBinder = new MyBinder();
+    private String deviceid="00009385000000000001";
+    private long data_count_tcp = 0;
+    private long data_count_mqtt =0;
+    //客户端端口
+    private static ArrayList<Socket> socketList = new ArrayList<Socket>();
 
     public UsrCloudClientService getInstance() {
         return UsrCloudClientService.this;
     }
+    //TCP 服务器的客户端记录
+    public void set_deviceId(String deviceId) {
+        this.deviceid= deviceId;
+    }
+    public String  get_deviceId()
+    {
+            return  deviceid;
+    }
 
+    public void set_data_count_zero()
+    {
+        data_count_mqtt=0;
+        data_count_tcp = 0;
+    }
+    public long get_tcp_data_count()
+    {
+            return data_count_tcp;
+    }
+    public long get_mqtt_data_count()
+    {
+        return data_count_mqtt;
+    }
+    public   void start_tcp_server(String stingport) throws IOException {
+
+        // 定义保存所有Socket的ArrayList
+           int port;
+        try {
+            port  = Integer.parseInt(stingport);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+        ServerSocket ss = new ServerSocket(port);
+        //回收已经开启的线程
+        if(serverlistenThread!=null && serverlistenThread.isAlive()) {
+            try {
+                serverlistenThread_local.ss.close();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            serverlistenThread_local.server_threadrun=false;
+            serverlistenThread.interrupt();
+            serverlistenThread = null;
+        }
+        serverlistenThread_local =new ServerlistenThread(ss);
+        serverlistenThread_local.server_threadrun =true;
+        serverlistenThread= new Thread(serverlistenThread_local);
+        serverlistenThread.start();
+    }
+    //关闭已经开启的TCP服务及线程
+    private void stop_tcp_listen()
+    {
+        for (Socket s : socketList)
+        {
+            try {
+                s.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        socketList.clear();
+        //回收已经开启的线程
+        if(serverlistenThread!=null && serverlistenThread.isAlive()) {
+            try {
+                serverlistenThread_local.ss.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            serverlistenThread_local.server_threadrun=false;
+            serverlistenThread.interrupt();
+            serverlistenThread = null;
+        }
+    }
+    // TCPserver 监听接收线程，关闭的时候，关闭该线程
+    private Thread serverlistenThread;
+    private ServerlistenThread serverlistenThread_local;
+
+    public class ServerlistenThread implements Runnable
+    {
+        boolean server_threadrun =true;
+        ServerSocket ss = null;
+        public ServerlistenThread(ServerSocket s) {
+            ss = s;
+        }
+        public void run()
+        {
+            System.out.println("宇时4G数传TCP服务正在工作...");
+            while (server_threadrun) {
+                Socket s = null;
+                try {
+                    s = ss.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                //打印连接的设备的IP地址
+                InetAddress address = s.getInetAddress();
+                System.out.println(address);
+                socketList.add(s);
+                System.out.println("客户端："+s.getRemoteSocketAddress()+"连接到服务器");
+                // 每当客户端连接后启动一条ServerThread线程为该客户端服务
+                try {
+                    new Thread(new ServerThread(s)).start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            //关闭已经开启的端口
+            try {
+                ss.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // 负责处理每个线程通信的线程类
+    public class ServerThread implements Runnable
+    {
+        // 定义当前线程所处理的Socket
+        Socket s = null;
+        // 该线程所处理的Socket所对应的输入流
+        InputStream br = null;
+        public ServerThread(Socket s) throws IOException {
+            this.s = s;
+            // 初始化该Socket对应的输入流
+            br = s.getInputStream();
+            System.out.println("客户端："+s.getRemoteSocketAddress()+"初始成功");
+        }
+
+        public void run()
+        {
+            String content = null;
+                // 采用循环不断从Socket中读取客户端发送过来的数据
+            while (true)
+            {
+                byte buffer [] = new byte[1024];
+                int temp = 0;
+                //从InputStream当中读取客户端所发送的数据
+                try {
+                    while((temp = br.read(buffer)) != -1){
+                        data_count_tcp+=temp;
+                        System.out.println("客户端："+s.getRemoteSocketAddress()+"获取到数据："+new String(buffer,0,temp));
+                      //  s.getOutputStream().write("server get msseage".getBytes());
+                               if(deviceid!=null)
+                            //发送数据到MQTT服务器端
+                            try {
+                                UsrCloudClientService.this.publishForDevId(deviceid,new String(buffer,0,temp).getBytes());
+                            }
+                            catch (Exception e)
+                            {
+
+                            }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    socketList.remove(s);
+                    break;
+                }
+            }
+        }
+    }
+    public static int returnActualLength(byte[] data) {
+        int i = 0;
+        for (; i < data.length; i++) {
+            if (data[i] == '\0')
+                break;
+        }
+        return i;
+    }
     @Override
     public void onCreate() {
         super.onCreate();
-        usrCloudClientCallback = new UsrCloudClientCallback();
+        usrCloudClientCallback = new UsrCloudClientCallback(){
+            @Override
+            public void onReceiveEvent(int messageId, String topic, byte[] data) {
+                super.onReceiveEvent(messageId,topic,data);
+              data_count_mqtt += returnActualLength(data);
+                try {
+                    for (Socket s : UsrCloudClientService.socketList)
+                    {
+                        OutputStream os = s.getOutputStream();
+                         os.write(data);
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        };
         usrCloudClient = new UsrCloudClient();
     }
 
@@ -50,10 +245,8 @@ public class UsrCloudClientService extends Service {
         uName = bundle.getString("uname");
         uPW = bundle.getString("upw");
         doClientConnection(uName, uPW);
-
         return super.onStartCommand(intent, flags, startId);
     }
-
     private void doClientConnection(String uname, String upw) {
         if (isConnectIsNomarl()) {
             try {
@@ -226,7 +419,8 @@ public class UsrCloudClientService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "UsrCloudClientService   is   onDestroy");
+        stop_tcp_listen();
+        Log.d(TAG, "宇时4G服务已关闭！");
     }
 
     @Nullable
@@ -250,10 +444,10 @@ public class UsrCloudClientService extends Service {
         NetworkInfo info = connectivityManager.getActiveNetworkInfo();
         if (info != null && info.isAvailable()) {
             String name = info.getTypeName();
-            Log.i(TAG, "MQTT当前网络名称：" + name);
+            Log.i(TAG, "宇时4G当前网络名称：" + name);
             return true;
         } else {
-            Log.i(TAG, "MQTT 没有可用网络");
+            Log.i(TAG, "宇时4G没有可用网络");
             return false;
         }
     }

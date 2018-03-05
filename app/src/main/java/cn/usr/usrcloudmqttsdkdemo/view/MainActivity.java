@@ -12,6 +12,8 @@ import android.widget.Button;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
 
+import java.io.IOException;
+
 import cn.usr.usrcloudmqttsdkdemo.R;
 import cn.usr.usrcloudmqttsdkdemo.base.UsrBaseActivity;
 import cn.usr.usrcloudmqttsdkdemo.business.UsrCloudClientService;
@@ -23,12 +25,13 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
     private Button main_btn_disconnent;
     private Button main_btn_subscribe_parse;
     private Button main_btn_publish_parse;
-
+    private String deviceid;
     private UsrCloudClientService myService;
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             myService = ((UsrCloudClientService.MyBinder) service).getService();
+            myService.set_deviceId(deviceid);
         }
 
         @Override
@@ -40,6 +43,11 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
+        //从Intent当中根据key取得value
+        if (intent != null) {
+             deviceid = intent.getStringExtra("deviceid");
+        }
         setContentView(R.layout.activity_main);
         initView();
 
@@ -77,10 +85,17 @@ public class MainActivity extends UsrBaseActivity implements View.OnClickListene
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.main_btn_subscribe:
-                startActivity(SubscribeActivity.class);
+             //   startActivity(SubscribeActivity.class);
+                myService.doSubscribeForDevId(deviceid);
+                try {
+                    myService.start_tcp_server("5760");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 break;
             case R.id.main_btn_publish:
-                startActivity(PublishActivity.class);
+               // startActivity(PublishActivity.class);
+                main_btn_subscribe_parse.setText(String.valueOf(myService.get_mqtt_data_count()));
                 break;
             case R.id.main_btn_subscribe_parse:
                 startActivity(SubscribeParseActivity.class);

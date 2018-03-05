@@ -115,9 +115,4 @@ public class UsrCloudClientCallback extends UsrCloudMqttCallbackAdapter {
         mcontext.sendBroadcast(intent);
     }
 
-
-
-
-
-
 }

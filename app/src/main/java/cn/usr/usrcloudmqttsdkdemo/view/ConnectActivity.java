@@ -126,7 +126,7 @@ public class ConnectActivity extends UsrBaseActivity {
             editor.commit();
             con_btn_connect.setClickable(true);
             con_btn_connect.setText("启动宇时4G数传");
-            progressBar.setVisibility(View.VISIBLE);
+          //  progressBar.setVisibility(View.VISIBLE);
             con_btn_connect.setBackgroundResource(R.drawable.button_shape);
             super.handleMessage(msg);
         }
@@ -349,7 +349,9 @@ public class ConnectActivity extends UsrBaseActivity {
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
-                startActivity(new Intent(ConnectActivity.this, MainActivity.class));
+               Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
+                intent1.putExtra("deviceid",device_id.getText().toString());
+                startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
                 Toast.makeText(ConnectActivity.this, "宇时4G数传启动失败\r\n请检查网络是否畅通!", Toast.LENGTH_SHORT).show();
                 con_btn_connect.setClickable(true);
