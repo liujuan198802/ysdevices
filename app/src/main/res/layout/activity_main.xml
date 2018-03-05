@@ -20,8 +20,83 @@
             android:layout_marginTop="3dp"
             android:text="@string/cloudRaw"
             android:textColor="#fff"
-            android:textSize="13dp" />
+            android:textSize="23sp" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_marginTop="10dp"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="设备ID:"
+                android:textColor="#fff"
+                android:textSize="18sp"
+                android:id="@+id/textView2" />
 
+            <TextView
+                android:id="@+id/text_device_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/textView2"
+                android:layout_alignBottom="@+id/textView2"
+                android:layout_marginLeft="10dp"
+                android:layout_toRightOf="@+id/textView2"
+                android:text="00009385000000000001"
+                android:textColor="#fff"
+                android:textSize="18sp" />
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_marginTop="10dp"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="本机IP:"
+                android:textColor="#fff"
+                android:textSize="18sp"
+                android:id="@+id/textView3" />
+
+            <TextView
+                android:id="@+id/local_ip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/textView3"
+                android:layout_alignBottom="@+id/textView3"
+                android:layout_marginLeft="10dp"
+                android:layout_toRightOf="@+id/textView3"
+                android:text="127.0.0.1"
+                android:textColor="#fff"
+                android:textSize="18sp" />
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_marginTop="15dp"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="服务端口:"
+                android:textColor="#fff"
+                android:textSize="18sp"
+                android:id="@+id/textView4" />
+
+            <EditText
+                android:id="@+id/local_port"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignBaseline="@+id/textView4"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="3dp"
+                android:layout_toRightOf="@+id/textView4"
+                android:inputType="number"
+                android:text="5760"
+                android:textColor="#fff"
+                android:textSize="18sp" />
+        </RelativeLayout>
         <Button
             android:id="@+id/main_btn_subscribe"
             android:layout_width="match_parent"
@@ -46,14 +121,16 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#303035" />
+        android:background="#f0f0f1" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"
+        android:layout_weight="1.5"
         android:orientation="vertical">
-
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -61,26 +138,113 @@
             android:layout_marginTop="3dp"
             android:text="@string/cloudParse"
             android:textColor="#fff"
-            android:textSize="13dp" />
+            android:textSize="23sp"
+            android:id="@+id/textView5" />
 
-        <Button
-            android:id="@+id/main_btn_subscribe_parse"
+            <Button
+                android:id="@+id/btn_cler_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignTop="@+id/textView5"
+                android:layout_marginEnd="30dp"
+                android:layout_marginRight="30sp"
+                android:background="@drawable/raw_shape"
+                android:text="统计清零"
+                android:textColor="@color/white" />
+        </RelativeLayout>
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:background="@drawable/parse_shape"
-            android:text="@string/subscribe_parse"
-            android:textColor="@color/white" />
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/main_btn_publish_parse"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:text="数传状态："
+                android:textColor="#fff"
+                android:textSize="18sp" />
+
+            <ImageView
+                android:id="@+id/img_tcp_state"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="10dp"
+                android:background="@color/red" />
+
+        </LinearLayout>
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:background="@drawable/parse_shape"
-            android:text="@string/publish_parse"
-            android:textColor="@color/white" />
+            android:orientation="horizontal">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:text="网络接收数据："
+            android:textColor="#fff"
+            android:textSize="18sp" />
 
+            <TextView
+                android:id="@+id/txt_mqtt_data_count"
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="10dp"
+                android:text="0"
+                android:textColor="#fff"
+                android:textSize="18sp" />
+    </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:text="TCP接收数据："
+                android:textColor="#fff"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/txt_tcp_data_count"
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="10dp"
+                android:text="0"
+                android:textColor="#fff"
+                android:textSize="18sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:text="客户端数量："
+                android:textColor="#fff"
+                android:textSize="18sp" />
+            <TextView
+                android:id="@+id/txt_client_num"
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="10dp"
+                android:text="0"
+                android:textColor="#fff"
+                android:textSize="18sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <Button

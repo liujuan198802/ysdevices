@@ -66,37 +66,46 @@ public class UsrCloudClientService extends Service {
     {
         return data_count_mqtt;
     }
+    public int get_client_count()
+    {
+        return socketList.size();
+    }
+    public boolean get_tcp_state()
+    {
+        if(serverlistenThread!=null)
+            return  serverlistenThread.isAlive();
+        return false;
+    }
     public   void start_tcp_server(String stingport) throws IOException {
 
         // 定义保存所有Socket的ArrayList
-           int port;
+        int port;
         try {
-            port  = Integer.parseInt(stingport);
+            port = Integer.parseInt(stingport);
         } catch (NumberFormatException e) {
             e.printStackTrace();
             throw new IOException();
         }
         ServerSocket ss = new ServerSocket(port);
         //回收已经开启的线程
-        if(serverlistenThread!=null && serverlistenThread.isAlive()) {
-            try {
+        if(serverlistenThread!=null ) {
+            try{
                 serverlistenThread_local.ss.close();
             }
-            catch (IOException e) {
+            catch (IOException e)
+            {
                 e.printStackTrace();
             }
-            serverlistenThread_local.server_threadrun=false;
-            serverlistenThread.interrupt();
-            serverlistenThread = null;
         }
-        serverlistenThread_local =new ServerlistenThread(ss);
-        serverlistenThread_local.server_threadrun =true;
-        serverlistenThread= new Thread(serverlistenThread_local);
-        serverlistenThread.start();
-    }
+            serverlistenThread = null;
+            serverlistenThread_local = new ServerlistenThread(ss);
+            serverlistenThread = new Thread(serverlistenThread_local);
+            serverlistenThread.start();
+        }
+
     //关闭已经开启的TCP服务及线程
-    private void stop_tcp_listen()
-    {
+    public void stop_tcp_listen()   {
+        doDisSubscribeforDevId(deviceid);
         for (Socket s : socketList)
         {
             try {
@@ -107,14 +116,14 @@ public class UsrCloudClientService extends Service {
         }
         socketList.clear();
         //回收已经开启的线程
-        if(serverlistenThread!=null && serverlistenThread.isAlive()) {
-            try {
+        if(serverlistenThread!=null ) {
+            try{
                 serverlistenThread_local.ss.close();
-            } catch (IOException e) {
+            }
+            catch (IOException e)
+            {
                 e.printStackTrace();
             }
-            serverlistenThread_local.server_threadrun=false;
-            serverlistenThread.interrupt();
             serverlistenThread = null;
         }
     }
@@ -124,7 +133,6 @@ public class UsrCloudClientService extends Service {
 
     public class ServerlistenThread implements Runnable
     {
-        boolean server_threadrun =true;
         ServerSocket ss = null;
         public ServerlistenThread(ServerSocket s) {
             ss = s;
@@ -132,12 +140,13 @@ public class UsrCloudClientService extends Service {
         public void run()
         {
             System.out.println("宇时4G数传TCP服务正在工作...");
-            while (server_threadrun) {
+            while (true) {
                 Socket s = null;
                 try {
                     s = ss.accept();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
+                    break;
                 }
                 //打印连接的设备的IP地址
                 InetAddress address = s.getInetAddress();
@@ -149,6 +158,7 @@ public class UsrCloudClientService extends Service {
                     new Thread(new ServerThread(s)).start();
                 } catch (IOException e) {
                     e.printStackTrace();
+                    break;
                 }
             }
             //关闭已经开启的端口
@@ -157,6 +167,7 @@ public class UsrCloudClientService extends Service {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            System.out.println("宇时4G数传TCP服务已停止！");
         }
     }
 
@@ -195,15 +206,16 @@ public class UsrCloudClientService extends Service {
                             }
                             catch (Exception e)
                             {
-
                             }
                     }
+                    break;
                 } catch (IOException e) {
                     e.printStackTrace();
-                    socketList.remove(s);
                     break;
                 }
             }
+            socketList.remove(s);
+            System.out.println("客户端:"+s.getRemoteSocketAddress()+"已断开链接！");
         }
     }
     public static int returnActualLength(byte[] data) {
@@ -221,19 +233,20 @@ public class UsrCloudClientService extends Service {
             @Override
             public void onReceiveEvent(int messageId, String topic, byte[] data) {
                 super.onReceiveEvent(messageId,topic,data);
-              data_count_mqtt += returnActualLength(data);
-                try {
+                 data_count_mqtt += returnActualLength(data);
                     for (Socket s : UsrCloudClientService.socketList)
                     {
+                        try {
                         OutputStream os = s.getOutputStream();
-                         os.write(data);
+                        os.write(data);
+                      }
+                    catch (Exception e)
+                    {
+                        UsrCloudClientService.socketList.remove(s);
+                        e.printStackTrace();
+                    }
                     }
                 }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
         };
         usrCloudClient = new UsrCloudClient();
     }
@@ -419,7 +432,7 @@ public class UsrCloudClientService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stop_tcp_listen();
+            stop_tcp_listen();
         Log.d(TAG, "宇时4G服务已关闭！");
     }
 
