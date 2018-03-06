@@ -1,4 +1,4 @@
-package cn.ys.usrcloudmqttsdkdemo;
+package cn.ys.yscloudmqttsdk;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

@@ -1,4 +1,4 @@
-package cn.ys.usrcloudmqttsdkdemo;
+package cn.ys.yscloudmqttsdk;
 
 import org.junit.Test;
 
