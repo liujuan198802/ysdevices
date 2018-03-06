@@ -41,6 +41,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
     private TextView local_ip;
     private TextView txt_tcp_data_count;
     private TextView txt_mqtt_data_count;
+    private TextView txt_device_id;
     private TextView txt_client_num;
     private ImageView img_tcp_state;
     private Handler timer_handler = new Handler();
@@ -129,7 +130,9 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         txt_tcp_data_count = (TextView) findViewById(R.id.txt_tcp_data_count);
         txt_client_num = (TextView) findViewById(R.id.txt_client_num);
         img_tcp_state = (ImageView) findViewById(R.id.img_tcp_state);
+        txt_device_id =(TextView) findViewById(R.id.text_device_id);
         local_ip.setText(getIp(this));
+        txt_device_id.setText(deviceid);
     }
 
 

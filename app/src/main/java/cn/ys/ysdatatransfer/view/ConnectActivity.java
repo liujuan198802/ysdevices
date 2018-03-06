@@ -54,6 +54,7 @@ public class ConnectActivity extends YsBaseActivity {
     private SharedPreferences.Editor editor;
     private  Button btn_get_path;
     private TextView  device_id;
+    private static String string_device_id;
     /**
      * 使用私钥进行解密
      */
@@ -114,22 +115,32 @@ public class ConnectActivity extends YsBaseActivity {
         con_btn_connect.setClickable(false);
         con_btn_connect.setText("请先选择keyconfig文件！");
         progressBar.setVisibility(View.INVISIBLE);
-       String deviceID = mSharedPreferences.getString("deviceID","-1");
-       if(deviceID!="-1")
+       string_device_id = mSharedPreferences.getString("deviceID","-1");
+
+       if(string_device_id!="-1")
        {
-           device_id.setText(deviceID);
-           myHandler.sendEmptyMessage(0);
+           device_id.setText(string_device_id);
+           con_btn_connect.setClickable(true);
+           con_btn_connect.setText("启动宇时4G数传");
+           //  progressBar.setVisibility(View.VISIBLE);
+           con_btn_connect.setBackgroundResource(R.drawable.button_shape);
        }
     }
     Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
-            editor.putString("deviceID",device_id.getText().toString());
-            editor.commit();
-            con_btn_connect.setClickable(true);
-            con_btn_connect.setText("启动宇时4G数传");
-          //  progressBar.setVisibility(View.VISIBLE);
-            con_btn_connect.setBackgroundResource(R.drawable.button_shape);
             super.handleMessage(msg);
+            switch (msg.what) {
+                case NETUPDATE:
+                    string_device_id= ((String) msg.obj);
+                    device_id.setText(string_device_id);
+                    editor.putString("deviceID",string_device_id);
+                    editor.commit();
+                    con_btn_connect.setClickable(true);
+                    con_btn_connect.setText("启动宇时4G数传");
+                    //  progressBar.setVisibility(View.VISIBLE);
+                    con_btn_connect.setBackgroundResource(R.drawable.button_shape);
+                    break;
+           }
         }
     };
     String path;
@@ -151,7 +162,7 @@ public class ConnectActivity extends YsBaseActivity {
             }
         }
     }
-
+    private static final int NETUPDATE=10;
    private void get_keyconfig_and_jump(String path)
    {
        String keyconfig= readFile(path);
@@ -162,11 +173,14 @@ public class ConnectActivity extends YsBaseActivity {
        }
        try
        {
-           String rs = new String(RsaHelper.decryptData(
+                string_device_id = new String(RsaHelper.decryptData(
                    Base64Helper.decode(keyconfig), privateKey), "UTF-8");
-           device_id.setText(rs);
-           myHandler.sendEmptyMessage(0);
-           Log.e("encoded", rs);
+           Message tempMsg = myHandler.obtainMessage();
+           tempMsg.what = NETUPDATE;
+           tempMsg.obj = string_device_id;
+           myHandler.sendMessage(tempMsg);
+
+           Log.e("device_id", string_device_id);
        }
        catch (Exception e)
        {
@@ -351,7 +365,7 @@ public class ConnectActivity extends YsBaseActivity {
         public void onReceive(Context context, Intent intent) {
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
                Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
-                intent1.putExtra("deviceid",device_id.getText().toString());
+                intent1.putExtra("deviceid",string_device_id);
                 startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
                 Toast.makeText(ConnectActivity.this, "宇时4G数传启动失败\r\n请检查网络是否畅通!", Toast.LENGTH_SHORT).show();
