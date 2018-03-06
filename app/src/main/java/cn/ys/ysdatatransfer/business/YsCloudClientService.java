@@ -197,12 +197,14 @@ public class YsCloudClientService extends Service {
                 try {
                     while((temp = br.read(buffer)) != -1){
                         data_count_tcp+=temp;
-                        System.out.println("客户端："+s.getRemoteSocketAddress()+"获取到数据："+new String(buffer,0,temp));
+                       // System.out.println("客户端："+s.getRemoteSocketAddress()+"获取到数据："+new String(buffer,0,temp));
                       //  s.getOutputStream().write("server get msseage".getBytes());
                                if(deviceid!=null)
                             //发送数据到MQTT服务器端
                             try {
-                                YsCloudClientService.this.publishForDevId(deviceid,new String(buffer,0,temp).getBytes());
+                                   byte[] data = new byte[temp];
+                                System.arraycopy(buffer, 0, data, 0, temp);
+                                YsCloudClientService.this.publishForDevId(deviceid,data);
                             }
                             catch (Exception e)
                             {
@@ -233,12 +235,12 @@ public class YsCloudClientService extends Service {
             @Override
             public void onReceiveEvent(int messageId, String topic, byte[] data) {
                 super.onReceiveEvent(messageId,topic,data);
-                 data_count_mqtt += returnActualLength(data);
+                 data_count_mqtt += data.length;
                     for (Socket s : YsCloudClientService.socketList)
                     {
                         try {
                         OutputStream os = s.getOutputStream();
-                        os.write(data);
+                        os.write(data,0,data.length);
                       }
                     catch (Exception e)
                     {
@@ -457,7 +459,7 @@ public class YsCloudClientService extends Service {
         NetworkInfo info = connectivityManager.getActiveNetworkInfo();
         if (info != null && info.isAvailable()) {
             String name = info.getTypeName();
-            Log.i(TAG, "宇时4G当前网络名称：" + name);
+          //  Log.i(TAG, "宇时4G当前网络名称：" + name);
             return true;
         } else {
             Log.i(TAG, "宇时4G没有可用网络");
