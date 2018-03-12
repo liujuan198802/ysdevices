@@ -168,13 +168,18 @@ public class ConnectActivity extends YsBaseActivity {
        String keyconfig= readFile(path);
        if(keyconfig == null)
        {
-           Toast.makeText(this,"读取keyconfig文件失败！",Toast.LENGTH_SHORT).show();
+           Toast.makeText(this,"打开keyconfig文件失败！",Toast.LENGTH_SHORT).show();
            return;
        }
        try
        {
-                string_device_id = new String(RsaHelper.decryptData(
+           string_device_id = new String(RsaHelper.decryptData(
                    Base64Helper.decode(keyconfig), privateKey), "UTF-8");
+           if(string_device_id.length()!=20)
+           {
+               Toast.makeText(this,"deviceid错误！",Toast.LENGTH_SHORT).show();
+               return;
+           }
            Message tempMsg = myHandler.obtainMessage();
            tempMsg.what = NETUPDATE;
            tempMsg.obj = string_device_id;
@@ -185,7 +190,7 @@ public class ConnectActivity extends YsBaseActivity {
        catch (Exception e)
        {
            e.printStackTrace();
-           Toast.makeText(this,"读取keyconfig文件失败！",Toast.LENGTH_SHORT).show();
+           Toast.makeText(this,"读取keyconfig异常！",Toast.LENGTH_SHORT).show();
            return;
        }
 
