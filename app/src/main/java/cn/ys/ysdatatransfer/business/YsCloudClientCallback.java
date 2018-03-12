@@ -10,7 +10,6 @@ import cn.usr.UsrCloudMqttCallbackAdapter;
 import cn.ys.ysdatatransfer.base.YsApplication;
 
 import static android.content.ContentValues.TAG;
-import static cn.ys.ysdatatransfer.utils.BaseUtils.bytes2hex01;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
@@ -103,7 +102,7 @@ public class YsCloudClientCallback extends UsrCloudMqttCallbackAdapter {
 
     @Override
     public void onReceiveEvent(int messageId, String topic, byte[] data) {
-        Log.d(TAG, messageId + "\n" + bytes2hex01(data));
+ //       Log.d(TAG, messageId + "\n" + bytes2hex01(data));
 //        Intent intent = new Intent();
 //        intent.setAction("onReceiveEvent");//用隐式意图来启动广播
 //        Bundle bundle = new Bundle();

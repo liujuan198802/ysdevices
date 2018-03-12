@@ -143,7 +143,13 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         main_btn_start.setOnClickListener(this);
         main_btn_disconnent.setOnClickListener(this);
         main_btn_clear.setOnClickListener(this);
-        set_click_state(true);
+
+        if(myService!=null) {
+            if(myService.get_tcp_state())
+                set_click_state(false);
+        }
+        else
+            set_click_state(true);
     }
     private void set_click_state(boolean state)
     {

@@ -191,14 +191,13 @@ public class YsCloudClientService extends Service {
                 // 采用循环不断从Socket中读取客户端发送过来的数据
             while (true)
             {
-                byte buffer [] = new byte[1024];
+                byte buffer [] = new byte[256];
                 int temp = 0;
                 //从InputStream当中读取客户端所发送的数据
                 try {
                     while((temp = br.read(buffer)) != -1){
                         data_count_tcp+=temp;
                        // System.out.println("客户端："+s.getRemoteSocketAddress()+"获取到数据："+new String(buffer,0,temp));
-                      //  s.getOutputStream().write("server get msseage".getBytes());
                                if(deviceid!=null)
                             //发送数据到MQTT服务器端
                             try {
@@ -366,13 +365,13 @@ public class YsCloudClientService extends Service {
     }
 
     public void publishForDevId(String devId, byte[] data) {
-        if (isConnectIsNomarl()) {
+      //  if (isConnectIsNomarl())
+        {
             try {
-                ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
+           //     ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
                 ysCloudClient.publishForDevId(devId, data);
             } catch (MqttException e) {
                 e.printStackTrace();
-
             }
         }
     }
