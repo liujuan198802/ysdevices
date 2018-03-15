@@ -1,5 +1,6 @@
 package cn.ys.ysdatatransfer.view;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -8,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -18,6 +20,7 @@ import android.os.Message;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -89,6 +92,7 @@ public class ConnectActivity extends YsBaseActivity {
         btn_get_path.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                myPermission();
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("*/*");//无类型限制
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -165,6 +169,12 @@ public class ConnectActivity extends YsBaseActivity {
     private static final int NETUPDATE=10;
    private void get_keyconfig_and_jump(String path)
    {
+       Toast.makeText(this,"正在读取文件："+path,Toast.LENGTH_SHORT).show();
+       try {
+           Thread.sleep(500);
+       } catch (InterruptedException e) {
+           e.printStackTrace();
+       }
        String keyconfig= readFile(path);
        if(keyconfig == null)
        {
@@ -364,6 +374,23 @@ public class ConnectActivity extends YsBaseActivity {
     protected void onDestroy() {
         super.onDestroy();
 
+    }
+
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+    public void myPermission() {
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    this,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
     }
 
     public class Receiver extends BroadcastReceiver {

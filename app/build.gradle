@@ -23,10 +23,10 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
-    compile group: 'com.alibaba', name: 'fastjson', version: '1.2.12'
-    compile group: 'org.apache.directory.studio', name: 'org.apache.commons.lang', version: '2.6'
+    compile 'com.alibaba:fastjson:1.2.12'
+    compile 'org.apache.directory.studio:org.apache.commons.lang:2.6'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'com.android.support:design:26.1.0'
-    implementation files('libs/usrcloudmqttclientsdk.jar')
+    implementation files('libs/org.eclipse.paho.client.mqttv3-1.2.0.jar')
 }
