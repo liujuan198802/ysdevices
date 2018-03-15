@@ -5,11 +5,6 @@
 
 package cn.usr.impl;
 
-import cn.usr.Interface.UsrCloudMqttCallback;
-import cn.usr.Interface.UsrCloudMqttClient;
-import cn.usr.entity.MqttPropertise;
-import cn.usr.utils.BeasUtils;
-import java.util.Arrays;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
@@ -19,6 +14,13 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+
+import java.util.Arrays;
+
+import cn.usr.Interface.UsrCloudMqttCallback;
+import cn.usr.Interface.UsrCloudMqttClient;
+import cn.usr.entity.MqttPropertise;
+import cn.usr.utils.BeasUtils;
 
 public class UsrCloudMqttClientImpl implements MqttCallbackExtended, UsrCloudMqttClient {
     private UsrCloudMqttCallback usrCloudMqttCallback;
@@ -60,7 +62,10 @@ public class UsrCloudMqttClientImpl implements MqttCallbackExtended, UsrCloudMqt
             }
         });
     }
-
+    public boolean is_mqtt_connected()
+    {
+        return  mqttAsyncClient.isConnected();
+    }
     public boolean DisConnectUnCheck() throws MqttException {
         if(this.mqttAsyncClient == null && !this.mqttAsyncClient.isConnected()) {
             return false;

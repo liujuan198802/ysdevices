@@ -111,6 +111,7 @@ public class ConnectActivity extends YsBaseActivity {
                 Bundle bundle = new Bundle();
                 bundle.putString("uname", uname);
                 bundle.putString("upw", upw);
+                bundle.putString("clientid", string_device_id);
                 USERNAME=uname;
                 startServiceWithParm(YsCloudClientService.class, bundle);
             }

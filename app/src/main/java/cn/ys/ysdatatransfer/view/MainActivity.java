@@ -78,7 +78,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             myService = ((YsCloudClientService.MyBinder) service).getService();
-            myService.set_deviceId(deviceid);
+         //   myService.set_deviceId(deviceid);
         }
 
         @Override

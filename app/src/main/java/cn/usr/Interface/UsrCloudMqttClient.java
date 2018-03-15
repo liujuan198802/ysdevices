@@ -10,6 +10,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 public interface UsrCloudMqttClient {
     void setUsrCloudMqttCallback(UsrCloudMqttCallback var1);
 
+    boolean is_mqtt_connected();
     void Connect(String var1, String var2) throws MqttException;
 
     boolean DisConnectUnCheck() throws MqttException;

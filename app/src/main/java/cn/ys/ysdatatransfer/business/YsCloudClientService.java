@@ -35,7 +35,7 @@ public class YsCloudClientService extends Service {
     private YsCloudClient ysCloudClient;
     private YsCloudClientCallback ysCloudClientCallback;
     private MyBinder mBinder = new MyBinder();
-    private String deviceid="00009385000000000001";
+    private static String deviceid="00009385000000000001";
     private long data_count_tcp = 0;
     private long data_count_mqtt =0;
     //客户端端口
@@ -45,13 +45,13 @@ public class YsCloudClientService extends Service {
         return YsCloudClientService.this;
     }
     //TCP 服务器的客户端记录
-    public void set_deviceId(String deviceId) {
-        this.deviceid= deviceId;
-    }
-    public String  get_deviceId()
-    {
-            return  deviceid;
-    }
+//    public void set_deviceId(String deviceId) {
+//        this.deviceid= deviceId;
+//    }
+//    public String  get_deviceId()
+//    {
+//            return  deviceid;
+//    }
 
     public void set_data_count_zero()
     {
@@ -72,9 +72,11 @@ public class YsCloudClientService extends Service {
     }
     public boolean get_tcp_state()
     {
-        if(serverlistenThread!=null)
-            return  serverlistenThread.isAlive();
-        return false;
+        if(ysCloudClient==null)
+            return  false;
+        if(serverlistenThread==null)
+            return  false;
+            return  (serverlistenThread.isAlive()&&ysCloudClient.is_mqtt_connected());
     }
     public   void start_tcp_server(String stingport) throws IOException {
 
@@ -248,6 +250,16 @@ public class YsCloudClientService extends Service {
                     }
                     }
                 }
+            @Override
+            public void onConnectAck(int returnCode, String description) {
+                super.onConnectAck(returnCode, description);
+                //连接到服务器
+                if(returnCode==2)
+                {
+                    //自动订阅设备
+                    YsCloudClientService.this.doSubscribeForDevId(deviceid);
+                }
+            }
         };
         ysCloudClient = new YsCloudClient();
     }
@@ -258,6 +270,7 @@ public class YsCloudClientService extends Service {
         Bundle bundle = intent.getExtras();
         uName = bundle.getString("uname");
         uPW = bundle.getString("upw");
+        deviceid = bundle.getString("clientid");
         doClientConnection(uName, uPW);
         return super.onStartCommand(intent, flags, startId);
     }

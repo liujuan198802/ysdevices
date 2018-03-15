@@ -5,10 +5,11 @@
 
 package cn.usr;
 
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 import cn.usr.Interface.UsrCloudMqttCallback;
 import cn.usr.Interface.UsrCloudMqttClient;
 import cn.usr.impl.UsrCloudMqttClientImpl;
-import org.eclipse.paho.client.mqttv3.MqttException;
 
 public class UsrCloudMqttClientAdapter implements UsrCloudMqttClient {
     private UsrCloudMqttClient usrCloudMqttClient = new UsrCloudMqttClientImpl();
@@ -19,7 +20,10 @@ public class UsrCloudMqttClientAdapter implements UsrCloudMqttClient {
     public void Connect(String userName, String passWord) throws MqttException {
         this.usrCloudMqttClient.Connect(userName, passWord);
     }
-
+    public boolean is_mqtt_connected()
+    {
+        return  this.usrCloudMqttClient.is_mqtt_connected();
+    }
     public boolean DisConnectUnCheck() throws MqttException {
         return this.usrCloudMqttClient.DisConnectUnCheck();
     }

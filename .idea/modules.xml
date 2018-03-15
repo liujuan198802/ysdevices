@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/UsrCloudAndroidDemo_Java.iml" filepath="$PROJECT_DIR$/UsrCloudAndroidDemo_Java.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Datatransfer_device.iml" filepath="$PROJECT_DIR$/Datatransfer_device.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
