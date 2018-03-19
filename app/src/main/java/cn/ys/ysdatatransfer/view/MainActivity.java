@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -39,9 +40,9 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
     private TextView txt_mqtt_data_count;
     private TextView txt_device_id;
     private TextView txt_client_num;
-    private ImageView img_tcp_state;
+    private ImageView img_mqtt_state;
     private Handler timer_handler = new Handler();
-    private  boolean tcp_state = false;
+    private  boolean mqtt_state = false;
     private OnSubscribeReceiver onSubscribeReceiver;
     Runnable runnable = new Runnable(){
 
@@ -50,12 +51,21 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
             //要做的事情，这里再次调用此Runnable对象，以实现每两秒实现一次的定时器操作
             if(myService!=null)
             {
-                /******
-                 *
-                 *
-                 * 定时检查一些状态，
-                 *
-                 * **/
+                String mqtt_data=Long.toString(myService.get_mqtt_data_count());
+                String tcp_data = Long.toString(myService.get_com_data_count());
+                txt_mqtt_data_count.setText(mqtt_data);
+                txt_tcp_data_count.setText(tcp_data);
+                img_mqtt_state.setBackgroundColor(Color.RED);
+                txt_client_num.setText(String.valueOf(myService.get_client_count()));
+                if(myService.get_mqtt_state())
+                {
+                    mqtt_state =!mqtt_state;
+                    if(mqtt_state)
+                        img_mqtt_state.setBackgroundColor(Color.RED);
+                    else
+                        img_mqtt_state.setBackgroundColor(Color.GREEN);
+                }
+                myService.publishForDevId(deviceid,"test".getBytes());
             }
 
             timer_handler.postDelayed(this, 400);
@@ -116,7 +126,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         txt_mqtt_data_count = (TextView) findViewById(R.id.txt_mqtt_data_count);
         txt_tcp_data_count = (TextView) findViewById(R.id.txt_tcp_data_count);
         txt_client_num = (TextView) findViewById(R.id.txt_client_num);
-        img_tcp_state = (ImageView) findViewById(R.id.img_tcp_state);
+        img_mqtt_state = (ImageView) findViewById(R.id.img_tcp_state);
         txt_device_id =(TextView) findViewById(R.id.text_device_id);
         local_ip.setText(getIp(this));
         txt_device_id.setText(deviceid);

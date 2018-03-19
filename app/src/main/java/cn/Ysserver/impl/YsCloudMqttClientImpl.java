@@ -225,6 +225,12 @@ public class YsCloudMqttClientImpl implements MqttCallbackExtended, YsCloudMqttC
 
     private void PublishData(String topic, byte[] data) throws MqttException {
         MqttMessage mqttMessage = new MqttMessage();
+        /**
+         * 最多一次（0）
+         最少一次（1）
+         只一次（2）
+         *后面，分别评估效果
+         */
         mqttMessage.setQos(1);
         mqttMessage.setRetained(true);
         mqttMessage.setPayload(data);
@@ -243,7 +249,7 @@ public class YsCloudMqttClientImpl implements MqttCallbackExtended, YsCloudMqttC
 
             public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
                 if(YsCloudMqttClientImpl.this.usrCloudMqttCallback != null) {
-                    YsCloudMqttClientImpl.this.usrCloudMqttCallback.onPublishDataAck(iMqttToken.getMessageId(), Arrays.toString(iMqttToken.getTopics()), true);
+                    YsCloudMqttClientImpl.this.usrCloudMqttCallback.onPublishDataAck(iMqttToken.getMessageId(), Arrays.toString(iMqttToken.getTopics()), false);
                 }
 
             }

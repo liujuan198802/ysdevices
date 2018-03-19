@@ -15,7 +15,6 @@ import com.temolin.tml_serial.SerialPort;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,8 +35,10 @@ public class YsCloudClientService extends Service {
     private YsCloudClientCallback ysCloudClientCallback;
     private MyBinder mBinder = new MyBinder();
     private static String deviceid="00009385000000000001";
-    private long data_count_tcp = 0;
-    private long data_count_mqtt =0;
+    private static long data_count_com_get = 0;
+    private static long data_count_com_send = 0;
+    private static long data_count_mqtt_get =0;
+    private static long data_count_mqtt_send =0;
 
     public YsCloudClientService getInstance() {
         return YsCloudClientService.this;
@@ -81,32 +82,57 @@ public class YsCloudClientService extends Service {
             super.run();
             while(!isInterrupted()) {
                 int size;
+                Log.v(TAG, "串口线程已启动！");
                 try {
-                    Log.v(TAG, "ReadThread ");
                     byte[] buffer = new byte[512];
                     if (mInputStream == null) return;
                     while((size=mInputStream.read(buffer)) != -1){
                         if (size > 0) {
-                            Log.v(TAG, "receive data :"+buffer.toString());
-                            //Log.v(TAG, "receive data,buffer[0]:"+buffer[0]+ " buffer[1]:"+buffer[1]);
+                         //   Log.v(TAG, "receive data :"+buffer.toString());
+                            byte[] data = new byte[size];
+                            System.arraycopy(buffer, 0, data, 0, size);
+                            publishForDevId(deviceid,data);
                         }
-
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                     return;
                 }
             }
+            Log.v(TAG, "串口线程已结束！");
         }
+    }
+    public long get_com_data_count()
+    {
+        return data_count_com_get;
+    }
+    public long get_mqtt_data_count()
+    {
+        return data_count_mqtt_get;
+    }
+    public int get_client_count()
+    {
+        return 0;
+    }
+    public boolean get_mqtt_state()
+    {
+      return  ysCloudClient.is_mqtt_connected();
     }
     public void set_data_count_zero()
     {
-        data_count_mqtt=0;
-        data_count_tcp = 0;
+        data_count_mqtt_get=0;
+        data_count_com_get = 0;
+        data_count_com_send=0;
+        data_count_mqtt_send =0;
     }
 
 
-
+    /*******
+     *
+     *
+     * 服务代码
+     *
+     * *********/
     @Override
     public void onCreate() {
         super.onCreate();
@@ -120,20 +146,19 @@ public class YsCloudClientService extends Service {
         uName = bundle.getString("uname");
         uPW = bundle.getString("upw");
         deviceid = bundle.getString("clientid");
-        doClientConnection(uName, uPW);
-        try{
-            mSerialPort_1 = new SerialPort(new File(portPath2), baudrate, 0);
-            mOutputStream_1 = mSerialPort_1.getOutputStream();
-            mReadThread_1 = new ReadThread(mSerialPort_1,1);
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-        /******
-         *
+        doClientConnection(uName, uPW,deviceid);
+//        try{
+//            mSerialPort_1 = new SerialPort(new File(portPath2), baudrate, 0);
+//            mOutputStream_1 = mSerialPort_1.getOutputStream();
+//            mReadThread_1 = new ReadThread(mSerialPort_1,1);
+//        }catch (IOException e){
+//            e.printStackTrace();
+//        }
+        /*
          *
          * 串口2的数据暂时不使用，等待服务器搭建好后再开启
          *
-         * **/
+         */
 //        try{
 //            mSerialPort_2 = new SerialPort(new File(portPath3), baudrate, 0);
 //            mOutputStream_2 = mSerialPort_1.getOutputStream();
@@ -143,11 +168,13 @@ public class YsCloudClientService extends Service {
 //        }
         return super.onStartCommand(intent, flags, startId);
     }
-    private void doClientConnection(String uname, String upw) {
-        if (isConnectIsNomarl()) {
+    private void doClientConnection(String uname, String upw,String device_no) {
+        //屏蔽网络判断，防止在没有网络的时候，没有自动重连机制
+      //  if (isConnectIsNomarl())
+        {
             try {
                 ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
-                ysCloudClient.Connect(uname, upw,deviceid);
+                ysCloudClient.Connect(uname, upw,device_no);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -252,6 +279,7 @@ public class YsCloudClientService extends Service {
             try {
            //     ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
                 ysCloudClient.publishForDevId(devId, data);
+                data_count_mqtt_send+=data.length;
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -353,13 +381,13 @@ public class YsCloudClientService extends Service {
         }
     }
 
-/***
- *
- *
- * 数据回调部分
- *
- *
- * *********/
+        /***
+         *
+         *
+         * 数据回调部分
+         *
+         *
+         * *********/
     public class YsCloudClientCallback extends YsCloudMqttCallbackAdapter {
 
         private Context mcontext = YsApplication.getInstance();
@@ -384,6 +412,9 @@ public class YsCloudClientService extends Service {
         @Override
         public void onSubscribeAck(int messageId, String clientId, String topics, int returnCode) {
             super.onSubscribeAck(messageId, clientId, topics, returnCode);
+            //订阅主题成功
+            if(returnCode!=0)
+                return;
         }
 
         @Override
@@ -398,7 +429,6 @@ public class YsCloudClientService extends Service {
 
         @Override
         public void onPublishDataAck(int messageId, String topic, boolean isSuccess) {
-
         }
 
         /********
@@ -415,7 +445,9 @@ public class YsCloudClientService extends Service {
         /**/
         @Override
         public void onReceiveEvent(int messageId, String topic, byte[] data) {
-
+            //默认只会收到设备的非JSON数据
+            data_count_mqtt_get+= data.length;
+            //再采用串口发送数据出去
         }
 
     }

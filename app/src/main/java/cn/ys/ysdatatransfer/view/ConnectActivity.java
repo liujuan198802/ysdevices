@@ -393,7 +393,15 @@ public class ConnectActivity extends YsBaseActivity {
             );
         }
     }
+    Runnable runnable = new Runnable(){
 
+        public void run(){
+            // TODO Auto-generated method stub
+                 //尝试自动重连
+                con_btn_connect.performClick();
+        }
+    };
+    Handler re_connect_handler = new Handler();
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
@@ -406,6 +414,8 @@ public class ConnectActivity extends YsBaseActivity {
                 con_btn_connect.setText("启动宇时4G数传");
                 progressBar.setVisibility(View.INVISIBLE);
                 con_btn_connect.setBackgroundResource(R.drawable.button_shape);
+                //2s后自动重连
+                re_connect_handler.postDelayed(runnable,2000);
             }
 
         }
