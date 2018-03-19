@@ -11,17 +11,17 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.temolin.tml_serial.SerialPort;
+
 import org.eclipse.paho.client.mqttv3.MqttException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
 
-import static android.content.ContentValues.TAG;
+import cn.Ysserver.YsCloudMqttCallbackAdapter;
+import cn.ys.ysdatatransfer.base.YsApplication;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
@@ -29,7 +29,7 @@ import static android.content.ContentValues.TAG;
 
 public class YsCloudClientService extends Service {
 
-
+    private static final String TAG = "YS_service";
     private static String uName = "";
     private static String uPW = "";
     private YsCloudClient ysCloudClient;
@@ -38,232 +38,81 @@ public class YsCloudClientService extends Service {
     private static String deviceid="00009385000000000001";
     private long data_count_tcp = 0;
     private long data_count_mqtt =0;
-    //客户端端口
-    private static ArrayList<Socket> socketList = new ArrayList<Socket>();
 
     public YsCloudClientService getInstance() {
         return YsCloudClientService.this;
     }
-    //TCP 服务器的客户端记录
-//    public void set_deviceId(String deviceId) {
-//        this.deviceid= deviceId;
-//    }
-//    public String  get_deviceId()
-//    {
-//            return  deviceid;
-//    }
+    /*******
+     *
+     *串口部分代码
+     *
+     *
+     * *****/
+    private ReadThread comReadThread_1;
+    private ReadThread comReadThread_2;
+   // String portPath0 = "/dev/ttyMT0";
+    String portPath2 = "/dev/ttyMT2";
+    String portPath3 = "/dev/ttyMT3";
+    private final int baudrate=57600;
+    private int uart_port=2;
+    private SerialPort mSerialPort_1 = null;
+    protected OutputStream mOutputStream_1 = null;
+    private SerialPort mSerialPort_2 = null;
+    protected OutputStream mOutputStream_2 = null;
+    private ReadThread mReadThread_1;
+    private ReadThread mReadThread_2;
+    //读取串口数据线程
+    private class ReadThread extends Thread {
 
+        private SerialPort mSerialPort = null;
+        protected InputStream mInputStream=null;
+        private int port_num;
+        public ReadThread(SerialPort serialPort,int port_no)
+        {
+            this.port_num= port_no;
+            mSerialPort = serialPort;
+            if(mSerialPort!=null)
+            {
+              mInputStream = mSerialPort.getInputStream();
+            }
+        }
+        @Override
+        public void run() {
+            super.run();
+            while(!isInterrupted()) {
+                int size;
+                try {
+                    Log.v(TAG, "ReadThread ");
+                    byte[] buffer = new byte[512];
+                    if (mInputStream == null) return;
+                    while((size=mInputStream.read(buffer)) != -1){
+                        if (size > 0) {
+                            Log.v(TAG, "receive data :"+buffer.toString());
+                            //Log.v(TAG, "receive data,buffer[0]:"+buffer[0]+ " buffer[1]:"+buffer[1]);
+                        }
+
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return;
+                }
+            }
+        }
+    }
     public void set_data_count_zero()
     {
         data_count_mqtt=0;
         data_count_tcp = 0;
     }
-    public long get_tcp_data_count()
-    {
-            return data_count_tcp;
-    }
-    public long get_mqtt_data_count()
-    {
-        return data_count_mqtt;
-    }
-    public int get_client_count()
-    {
-        return socketList.size();
-    }
-    public boolean get_tcp_state()
-    {
-        if(ysCloudClient==null)
-            return  false;
-        if(serverlistenThread==null)
-            return  false;
-            return  (serverlistenThread.isAlive()&&ysCloudClient.is_mqtt_connected());
-    }
-    public   void start_tcp_server(String stingport) throws IOException {
 
-        // 定义保存所有Socket的ArrayList
-        int port;
-        try {
-            port = Integer.parseInt(stingport);
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-            throw new IOException();
-        }
-        ServerSocket ss = new ServerSocket(port);
-        //回收已经开启的线程
-        if(serverlistenThread!=null ) {
-            try{
-                serverlistenThread_local.ss.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-            serverlistenThread = null;
-            serverlistenThread_local = new ServerlistenThread(ss);
-            serverlistenThread = new Thread(serverlistenThread_local);
-            serverlistenThread.start();
-        }
 
-    //关闭已经开启的TCP服务及线程
-    public void stop_tcp_listen()   {
-        doDisSubscribeforDevId(deviceid);
-        for (Socket s : socketList)
-        {
-            try {
-                s.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        socketList.clear();
-        //回收已经开启的线程
-        if(serverlistenThread!=null ) {
-            try{
-                serverlistenThread_local.ss.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            serverlistenThread = null;
-        }
-    }
-    // TCPserver 监听接收线程，关闭的时候，关闭该线程
-    private Thread serverlistenThread;
-    private ServerlistenThread serverlistenThread_local;
 
-    public class ServerlistenThread implements Runnable
-    {
-        ServerSocket ss = null;
-        public ServerlistenThread(ServerSocket s) {
-            ss = s;
-        }
-        public void run()
-        {
-            System.out.println("宇时4G数传TCP服务正在工作...");
-            while (true) {
-                Socket s = null;
-                try {
-                    s = ss.accept();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    break;
-                }
-                //打印连接的设备的IP地址
-                InetAddress address = s.getInetAddress();
-                System.out.println(address);
-                socketList.add(s);
-                System.out.println("客户端："+s.getRemoteSocketAddress()+"连接到服务器");
-                // 每当客户端连接后启动一条ServerThread线程为该客户端服务
-                try {
-                    new Thread(new ServerThread(s)).start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-            //关闭已经开启的端口
-            try {
-                ss.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            System.out.println("宇时4G数传TCP服务已停止！");
-        }
-    }
-
-    // 负责处理每个线程通信的线程类
-    public class ServerThread implements Runnable
-    {
-        // 定义当前线程所处理的Socket
-        Socket s = null;
-        // 该线程所处理的Socket所对应的输入流
-        InputStream br = null;
-        public ServerThread(Socket s) throws IOException {
-            this.s = s;
-            // 初始化该Socket对应的输入流
-            br = s.getInputStream();
-            System.out.println("客户端："+s.getRemoteSocketAddress()+"初始成功");
-        }
-
-        public void run()
-        {
-            String content = null;
-                // 采用循环不断从Socket中读取客户端发送过来的数据
-            while (true)
-            {
-                byte buffer [] = new byte[256];
-                int temp = 0;
-                //从InputStream当中读取客户端所发送的数据
-                try {
-                    while((temp = br.read(buffer)) != -1){
-                        data_count_tcp+=temp;
-                       // System.out.println("客户端："+s.getRemoteSocketAddress()+"获取到数据："+new String(buffer,0,temp));
-                               if(deviceid!=null)
-                            //发送数据到MQTT服务器端
-                            try {
-                                   byte[] data = new byte[temp];
-                                System.arraycopy(buffer, 0, data, 0, temp);
-                                YsCloudClientService.this.publishForDevId(deviceid,data);
-                            }
-                            catch (Exception e)
-                            {
-                            }
-                    }
-                    break;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-            socketList.remove(s);
-            System.out.println("客户端:"+s.getRemoteSocketAddress()+"已断开链接！");
-        }
-    }
-    public static int returnActualLength(byte[] data) {
-        int i = 0;
-        for (; i < data.length; i++) {
-            if (data[i] == '\0')
-                break;
-        }
-        return i;
-    }
     @Override
     public void onCreate() {
         super.onCreate();
-        ysCloudClientCallback = new YsCloudClientCallback(){
-            @Override
-            public void onReceiveEvent(int messageId, String topic, byte[] data) {
-                super.onReceiveEvent(messageId,topic,data);
-                 data_count_mqtt += data.length;
-                    for (Socket s : YsCloudClientService.socketList)
-                    {
-                        try {
-                        OutputStream os = s.getOutputStream();
-                        os.write(data,0,data.length);
-                      }
-                    catch (Exception e)
-                    {
-                        YsCloudClientService.socketList.remove(s);
-                        e.printStackTrace();
-                    }
-                    }
-                }
-            @Override
-            public void onConnectAck(int returnCode, String description) {
-                super.onConnectAck(returnCode, description);
-                //连接到服务器
-                if(returnCode==2)
-                {
-                    //自动订阅设备
-                    YsCloudClientService.this.doSubscribeForDevId(deviceid);
-                }
-            }
-        };
+        ysCloudClientCallback = new YsCloudClientCallback();
         ysCloudClient = new YsCloudClient();
     }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         System.out.println("onStartCommand");
@@ -272,13 +121,33 @@ public class YsCloudClientService extends Service {
         uPW = bundle.getString("upw");
         deviceid = bundle.getString("clientid");
         doClientConnection(uName, uPW);
+        try{
+            mSerialPort_1 = new SerialPort(new File(portPath2), baudrate, 0);
+            mOutputStream_1 = mSerialPort_1.getOutputStream();
+            mReadThread_1 = new ReadThread(mSerialPort_1,1);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        /******
+         *
+         *
+         * 串口2的数据暂时不使用，等待服务器搭建好后再开启
+         *
+         * **/
+//        try{
+//            mSerialPort_2 = new SerialPort(new File(portPath3), baudrate, 0);
+//            mOutputStream_2 = mSerialPort_1.getOutputStream();
+//            mReadThread_2 = new ReadThread(mSerialPort_2,2);
+//        }catch (IOException e){
+//            e.printStackTrace();
+//        }
         return super.onStartCommand(intent, flags, startId);
     }
     private void doClientConnection(String uname, String upw) {
         if (isConnectIsNomarl()) {
             try {
                 ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
-                ysCloudClient.Connect(uname, upw);
+                ysCloudClient.Connect(uname, upw,deviceid);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -399,9 +268,15 @@ public class YsCloudClientService extends Service {
             }
         }
     }
-
+/********
+ *
+ * 现在默认使用 作为串口2的数据流
+ * slaveIndex 99999
+ * pointId   99999
+ * *****/
     public void publishParsedSetDataPoint(String devId, String slaveIndex,  String pointId, String value) {
-        if (isConnectIsNomarl()) {
+      //  if (isConnectIsNomarl())
+        {
             try {
                 ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
                 ysCloudClient.publishParsedSetDataPoint(devId, slaveIndex,  pointId, value);
@@ -446,7 +321,6 @@ public class YsCloudClientService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-            stop_tcp_listen();
         Log.d(TAG, "宇时4G服务已关闭！");
     }
 
@@ -471,7 +345,7 @@ public class YsCloudClientService extends Service {
         NetworkInfo info = connectivityManager.getActiveNetworkInfo();
         if (info != null && info.isAvailable()) {
             String name = info.getTypeName();
-          //  Log.i(TAG, "宇时4G当前网络名称：" + name);
+            //  Log.i(TAG, "宇时4G当前网络名称：" + name);
             return true;
         } else {
             Log.i(TAG, "宇时4G没有可用网络");
@@ -479,4 +353,70 @@ public class YsCloudClientService extends Service {
         }
     }
 
+/***
+ *
+ *
+ * 数据回调部分
+ *
+ *
+ * *********/
+    public class YsCloudClientCallback extends YsCloudMqttCallbackAdapter {
+
+        private Context mcontext = YsApplication.getInstance();
+        @Override
+        public void onConnectAck(int returnCode, String description) {
+            super.onConnectAck(returnCode, description);
+            Log.d(TAG, returnCode + "\n" + description);
+            Intent intent = new Intent();
+            intent.setAction("onConnectAck");//用隐式意图来启动广播
+            intent.putExtra("onConnectAckreturnCode", returnCode);
+            intent.putExtra("onConnectAckdescription", description);
+            mcontext.sendBroadcast(intent);
+            //连接到服务器
+            if(returnCode==2)
+            {
+                //自动订阅设备原始数据流
+                doSubscribeForDevId(deviceid);
+                //自动订阅Jason数据流 暂时不用
+              //  doSubscribeParsedByDevId(deviceid);
+            }
+        }
+        @Override
+        public void onSubscribeAck(int messageId, String clientId, String topics, int returnCode) {
+            super.onSubscribeAck(messageId, clientId, topics, returnCode);
+        }
+
+        @Override
+        public void onReceiveParsedEvent(int messageId, String topic, String jsonData) {
+
+        }
+
+        @Override
+        public void onDisSubscribeAck(int messageId, String clientId, String topics, int returnCode) {
+
+        }
+
+        @Override
+        public void onPublishDataAck(int messageId, String topic, boolean isSuccess) {
+
+        }
+
+        /********
+        *
+        *暂时只处理作为
+         * 串口2的数据流
+        *其他的命令不处理
+        * ***********/
+        @Override
+        public void onPublishDataResult(int messageId, String topic) {
+
+        }
+
+        /**/
+        @Override
+        public void onReceiveEvent(int messageId, String topic, byte[] data) {
+
+        }
+
+    }
 }

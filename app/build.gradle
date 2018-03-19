@@ -29,4 +29,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation 'com.android.support:design:26.1.0'
     implementation files('libs/org.eclipse.paho.client.mqttv3-1.2.0.jar')
+    implementation files('libs/tml_serial.jar')
+    implementation files('libs/temolin_hardware.jar')
 }

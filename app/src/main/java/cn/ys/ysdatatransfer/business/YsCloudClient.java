@@ -2,18 +2,18 @@ package cn.ys.ysdatatransfer.business;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
 
-import cn.usr.Interface.UsrCloudMqttCallback;
-import cn.usr.UsrCloudMqttClientAdapter;
+import cn.Ysserver.Interface.YsCloudMqttCallback;
+import cn.Ysserver.YsCloudMqttClientAdapter;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
  */
 
-public class YsCloudClient extends UsrCloudMqttClientAdapter {
+public class YsCloudClient extends YsCloudMqttClientAdapter {
 
     @Override
-    public void Connect(String userName, String passWord) throws MqttException {
-        super.Connect(userName, passWord);
+    public void Connect(String userName, String passWord,String device_id) throws MqttException {
+        super.Connect(userName, passWord,device_id);
     }
 
 
@@ -44,7 +44,7 @@ public class YsCloudClient extends UsrCloudMqttClientAdapter {
     }
 
     @Override
-    public void setUsrCloudMqttCallback(UsrCloudMqttCallback CloudMqttCallback) {
+    public void setUsrCloudMqttCallback(YsCloudMqttCallback CloudMqttCallback) {
         super.setUsrCloudMqttCallback(CloudMqttCallback);
     }
 

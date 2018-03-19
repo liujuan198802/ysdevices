@@ -1,6 +1,5 @@
 package cn.ys.ysdatatransfer.view;
 
-import android.app.AlertDialog;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -8,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.graphics.Color;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -22,8 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
-
-import java.io.IOException;
 
 import cn.ys.ysdatatransfer.R;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
@@ -54,21 +50,12 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
             //要做的事情，这里再次调用此Runnable对象，以实现每两秒实现一次的定时器操作
             if(myService!=null)
             {
-                String mqtt_data=Long.toString(myService.get_mqtt_data_count());
-                String tcp_data = Long.toString(myService.get_tcp_data_count());
-                txt_mqtt_data_count.setText(mqtt_data);
-                txt_tcp_data_count.setText(tcp_data);
-                img_tcp_state.setBackgroundColor(Color.RED);
-                txt_client_num.setText(String.valueOf(myService.get_client_count()));
-                if(myService.get_tcp_state())
-                {
-                    tcp_state=!tcp_state;
-                    if(tcp_state)
-                        img_tcp_state.setBackgroundColor(Color.RED);
-                    else
-                        img_tcp_state.setBackgroundColor(Color.GREEN);
-                }
-
+                /******
+                 *
+                 *
+                 * 定时检查一些状态，
+                 *
+                 * **/
             }
 
             timer_handler.postDelayed(this, 400);
@@ -83,7 +70,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            myService.stop_tcp_listen();
+          //  myService.stop_tcp_listen();
             myService = null;
         }
     };
@@ -145,8 +132,8 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         main_btn_clear.setOnClickListener(this);
 
         if(myService!=null) {
-            if(myService.get_tcp_state())
-                set_click_state(false);
+//            if(myService.get_tcp_state())
+//                set_click_state(false);
         }
         else
             set_click_state(true);
@@ -190,23 +177,23 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         switch (v.getId()) {
             case R.id.main_btn_subscribe:
                 myService.doSubscribeForDevId(deviceid);
-                try {
-                    myService.start_tcp_server(local_port.getText().toString());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    new AlertDialog.Builder(this)
-                            .setTitle("错误")
-                            .setMessage("请检查本地端口是否被占用！") .show();
-                    set_click_state(true);
-                    Toast.makeText(this, "宇时4G数传服务启动失败！", Toast.LENGTH_SHORT).show();
-                    break;
-                }
+//                try {
+//                 //   myService.start_tcp_server(local_port.getText().toString());
+//                } catch
+//            {
+//                    new AlertDialog.Builder(this)
+//                            .setTitle("错误")
+//                            .setMessage("请检查本地端口是否被占用！") .show();
+//                    set_click_state(true);
+//                    Toast.makeText(this, "宇时4G数传服务启动失败！", Toast.LENGTH_SHORT).show();
+//                    break;
+//                }
                 Toast.makeText(this, "宇时4G数传服务启动成功！", Toast.LENGTH_SHORT).show();
                 set_click_state(false);
                 break;
             case R.id.main_btn_publish:
                 //关闭TCP服务
-                myService.stop_tcp_listen();
+              //  myService.stop_tcp_listen();
                 set_click_state(true);
                 Toast.makeText(this, "宇时4G数传服务已停止！", Toast.LENGTH_SHORT).show();
                 break;
@@ -240,7 +227,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                 int returnCode = bundle.getInt("returnCode");
                 if(returnCode!=0)
                 {
-                    myService.stop_tcp_listen();
+                  //  myService.stop_tcp_listen();
                     set_click_state(true);
                     Toast.makeText(MainActivity.this, "宇时4G数传连接设备失败！", Toast.LENGTH_SHORT).show();
                 }
