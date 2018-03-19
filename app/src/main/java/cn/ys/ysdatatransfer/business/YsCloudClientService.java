@@ -11,14 +11,14 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.temolin.tml_serial.SerialPort;
-
 import org.eclipse.paho.client.mqttv3.MqttException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import android_serialport_api.SerialPort;
 import cn.Ysserver.YsCloudMqttCallbackAdapter;
 import cn.ys.ysdatatransfer.base.YsApplication;
 
@@ -147,13 +147,18 @@ public class YsCloudClientService extends Service {
         uPW = bundle.getString("upw");
         deviceid = bundle.getString("clientid");
         doClientConnection(uName, uPW,deviceid);
-//        try{
-//            mSerialPort_1 = new SerialPort(new File(portPath2), baudrate, 0);
-//            mOutputStream_1 = mSerialPort_1.getOutputStream();
-//            mReadThread_1 = new ReadThread(mSerialPort_1,1);
-//        }catch (IOException e){
-//            e.printStackTrace();
-//        }
+        try{
+            mSerialPort_1 = new SerialPort(new File(portPath2), baudrate, 0);
+            mOutputStream_1 = mSerialPort_1.getOutputStream();
+            mReadThread_1 = new ReadThread(mSerialPort_1,1);
+        }
+        catch (SecurityException e) {
+            //
+            e.printStackTrace();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
         /*
          *
          * 串口2的数据暂时不使用，等待服务器搭建好后再开启
@@ -447,6 +452,14 @@ public class YsCloudClientService extends Service {
         public void onReceiveEvent(int messageId, String topic, byte[] data) {
             //默认只会收到设备的非JSON数据
             data_count_mqtt_get+= data.length;
+            try
+            {
+            mOutputStream_1.write(data);
+            }
+            catch (Exception e)
+            {
+
+            }
             //再采用串口发送数据出去
         }
 
