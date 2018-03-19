@@ -31,8 +31,11 @@
     <string name="cleanmsg">清空屏幕</string>
     <string name="cloudRaw">宇时4G服务操作</string>
     <string name="cloudParse">宇时4G服务状态:</string>
+    <string name="error_configuration">Please configure your serial port first.</string>
+    <string name="error_security">You do not have read/write permission to the serial port.</string>
+    <string name="error_unknown">The serial port can not be opened for an unknown reason.</string>
+    <string name="about_msg">Serial Port API sample v1.1	 </string>
     <array name="publishmode">
-
         <item>设备</item>
         <item>账户</item>
 
