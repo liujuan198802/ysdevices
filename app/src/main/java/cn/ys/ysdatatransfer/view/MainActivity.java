@@ -223,6 +223,15 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                 break;
         }
     }
+    private void  deal_with_dev_cmd(Device_cmd device_cmd)
+    {
+        if(device_cmd.getCmd_name()== null)
+            return;
+        if(device_cmd.getClient_id()==null)
+            return;
+        if(!device_cmd.getClient_id().equals(deviceid))
+            return;
+    }
     public class OnSubscribeReceiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();

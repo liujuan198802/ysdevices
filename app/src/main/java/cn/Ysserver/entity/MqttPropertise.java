@@ -5,12 +5,19 @@
 
 package cn.Ysserver.entity;
 
+import android.content.Context;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Properties;
 
 import cn.Ysserver.utils.BeasUtils;
+import cn.ys.ysdatatransfer.base.YsApplication;
 
 public class MqttPropertise {
     private static Properties prop = BeasUtils.getPropertie(MqttPropertise.class, "mqtt.properties");
+    private static OutputStream fos;
    // public static final String SERVER_ADDRESS ="tcp://service.cloudoftime.com:1883";
     //测试地址
     public static final String SERVER_ADDRESS ="tcp://192.168.1.125:1883";
@@ -46,7 +53,26 @@ public class MqttPropertise {
 
     public MqttPropertise() {
     }
-
+    public static void setproperty(String keyname ,String keyvalue)
+    {
+        prop.setProperty(keyname,keyvalue);
+        try {
+            fos =  YsApplication.getInstance().openFileOutput("mqtt.properties", Context.MODE_PRIVATE);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
+        try {
+            prop.store(fos, null);
+        } catch ( IOException e ) {
+            e.printStackTrace ( );
+        }
+        try {
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     static {
         CLIENTID_PREFIX = prop.getProperty("clientid_prefix");
         TOPIC_SUBSCRIBE_DEV_RAW = "$USR/DevRx/<Id>";
