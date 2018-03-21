@@ -73,6 +73,16 @@ public class MqttPropertise {
             e.printStackTrace();
         }
     }
+    public static String getproperty(String keyname)
+    {
+        try {
+            return prop.getProperty(keyname);
+        }
+        catch (RuntimeException e)
+        {
+            return null;
+        }
+    }
     static {
         CLIENTID_PREFIX = prop.getProperty("clientid_prefix");
         TOPIC_SUBSCRIBE_DEV_RAW = "$USR/DevRx/<Id>";

@@ -25,6 +25,7 @@ import com.alibaba.fastjson.JSONObject;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
 
+import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.R;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
@@ -70,13 +71,13 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                     else
                         img_mqtt_state.setBackgroundColor(Color.GREEN);
                 }
-                myService.publishForDevId(deviceid,"test".getBytes());
-                myService.publishForDevId2(deviceid,"test".getBytes());
-                Device_info device_info = new Device_info();
-                device_info.setClient_id(deviceid);
-                device_info.setInfo_name("test_info");
-                device_info.setInfo_state("test_state");
-                myService.publishForDevIdInfo(device_info);
+//                myService.publishForDevId(deviceid,"test".getBytes());
+//                myService.publishForDevId2(deviceid,"test".getBytes());
+//                Device_info device_info = new Device_info();
+//                device_info.setClient_id(deviceid);
+//                device_info.setInfo_name("test_info");
+//                device_info.setInfo_state("test_state");
+//                myService.publishForDevIdInfo(device_info);
             }
 
             timer_handler.postDelayed(this, 500);
@@ -231,6 +232,49 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
             return;
         if(!device_cmd.getClient_id().equals(deviceid))
             return;
+        //重启设备
+        if(device_cmd.getCmd_name().equals("reboot"));
+        //上报设备信息
+        if(device_cmd.getCmd_name().equals("get_sys_info"))
+        {
+
+        }
+        if(device_cmd.getCmd_name().equals("baudrate_serail1"))
+        {
+            MqttPropertise.setproperty("baudrate_serail1",device_cmd.getCmd_state());
+            Device_info device_info = new Device_info();
+            device_info.setClient_id(deviceid);
+            device_info.setInfo_name("baudrate_serail1");
+            device_info.setInfo_state(MqttPropertise.getproperty("baudrate_serail1"));
+            myService.publishForDevIdInfo(device_info);return;
+        }
+        if(device_cmd.getCmd_name().equals("baudrate_serial2"))
+        {
+            MqttPropertise.setproperty("baudrate_serial2",device_cmd.getCmd_state());
+            Device_info device_info = new Device_info();
+            device_info.setClient_id(deviceid);
+            device_info.setInfo_name("baudrate_serial2");
+            device_info.setInfo_state(MqttPropertise.getproperty("baudrate_serial2"));
+            myService.publishForDevIdInfo(device_info);return;
+        }
+        if(device_cmd.getCmd_name().equals("enable_serail1"))
+        {
+            MqttPropertise.setproperty("enable_serail1",device_cmd.getCmd_state());
+            Device_info device_info = new Device_info();
+            device_info.setClient_id(deviceid);
+            device_info.setInfo_name("enable_serail1");
+            device_info.setInfo_state(MqttPropertise.getproperty("enable_serail1"));
+            myService.publishForDevIdInfo(device_info);return;
+        }
+        if(device_cmd.getCmd_name().equals("enable_serail2"))
+        {
+            MqttPropertise.setproperty("enable_serail2",device_cmd.getCmd_state());
+            Device_info device_info = new Device_info();
+            device_info.setClient_id(deviceid);
+            device_info.setInfo_name("enable_serail2");
+            device_info.setInfo_state(MqttPropertise.getproperty("enable_serail2"));
+            myService.publishForDevIdInfo(device_info);return;
+        }
     }
     public class OnSubscribeReceiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
@@ -259,6 +303,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                     device_cmd.setCmd_name(jsonObject1.getString("cmd_name"));
                     device_cmd.setCmd_state(jsonObject1.getString("cmd_state"));
                     Log.d("宇时4G：","收到JSon："+device_cmd.toString());
+                    deal_with_dev_cmd(device_cmd);
                 }
                 catch(Exception e)
                 {
