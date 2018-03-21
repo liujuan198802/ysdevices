@@ -3,6 +3,7 @@ package cn.ys.ysdatatransfer.business;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Binder;
@@ -20,7 +21,9 @@ import java.io.OutputStream;
 
 import android_serialport_api.SerialPort;
 import cn.Ysserver.YsCloudMqttCallbackAdapter;
+import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.base.YsApplication;
+import cn.ys.ysdatatransfer.entity.Device_info;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
@@ -39,7 +42,8 @@ public class YsCloudClientService extends Service {
     private static long data_count_com_send = 0;
     private static long data_count_mqtt_get =0;
     private static long data_count_mqtt_send =0;
-
+    private SharedPreferences mSharedPreferences;
+    private SharedPreferences.Editor editor;
     public YsCloudClientService getInstance() {
         return YsCloudClientService.this;
     }
@@ -54,7 +58,6 @@ public class YsCloudClientService extends Service {
    // String portPath0 = "/dev/ttyMT0";
     String portPath2 = "/dev/ttyMT2";
     String portPath3 = "/dev/ttyMT3";
-    private final int baudrate=57600;
     private int uart_port=2;
     private SerialPort mSerialPort_1 = null;
     protected OutputStream mOutputStream_1 = null;
@@ -88,10 +91,16 @@ public class YsCloudClientService extends Service {
                     if (mInputStream == null) return;
                     while((size=mInputStream.read(buffer)) != -1){
                         if (size > 0) {
+                            data_count_com_get+=size;
                          //   Log.v(TAG, "receive data :"+buffer.toString());
                             byte[] data = new byte[size];
                             System.arraycopy(buffer, 0, data, 0, size);
+                            if(port_num==1)
                             publishForDevId(deviceid,data);
+                            else
+                            {
+                                publishForDevId2(deviceid,data);
+                            }
                         }
                     }
                 } catch (IOException e) {
@@ -127,6 +136,11 @@ public class YsCloudClientService extends Service {
     }
 
 
+    private boolean serail1_enable;
+    private boolean serail2_enable;
+    private int serail1_rate;
+    private int serail2_rate;
+
     /*******
      *
      *
@@ -147,31 +161,55 @@ public class YsCloudClientService extends Service {
         uPW = bundle.getString("upw");
         deviceid = bundle.getString("clientid");
         doClientConnection(uName, uPW,deviceid);
-        try{
-            mSerialPort_1 = new SerialPort(new File(portPath2), baudrate, 0);
-            mOutputStream_1 = mSerialPort_1.getOutputStream();
-            mReadThread_1 = new ReadThread(mSerialPort_1,1);
-        }
-        catch (SecurityException e) {
-            //
-            e.printStackTrace();
-        }
-        catch (IOException e){
-            e.printStackTrace();
-        }
-        /*
-         *
-         * 串口2的数据暂时不使用，等待服务器搭建好后再开启
-         *
-         */
-//        try{
-//            mSerialPort_2 = new SerialPort(new File(portPath3), baudrate, 0);
-//            mOutputStream_2 = mSerialPort_1.getOutputStream();
-//            mReadThread_2 = new ReadThread(mSerialPort_2,2);
-//        }catch (IOException e){
-//            e.printStackTrace();
-//        }
+        serail1_enable = MqttPropertise.SERIAL1_ENABLE.equals("true");
+        serail2_enable = MqttPropertise.SERIAL2_ENABLE.equals("true");
+        serail1_rate = Integer.valueOf(MqttPropertise.SERIAL1_RATE);
+        serail2_rate = Integer.valueOf(MqttPropertise.SERIAL2_RATE);
+        start_serail(serail1_enable,serail2_enable,serail1_rate,serail2_rate);
         return super.onStartCommand(intent, flags, startId);
+    }
+    private void close_com_port()
+    {
+        if (mReadThread_1 != null)
+            mReadThread_1.interrupt();
+        if(mSerialPort_1 != null){
+            mSerialPort_1.close();
+            mSerialPort_1 = null;
+        }
+        if (mReadThread_2 != null)
+            mReadThread_2.interrupt();
+        if(mSerialPort_2 != null){
+            mSerialPort_2.close();
+            mSerialPort_2 = null;
+        }
+    }
+    private void start_serail(boolean s1,boolean s2 ,int rate1,int rate2)
+    {
+        close_com_port();
+        if(s1) {
+            try {
+                mSerialPort_1 = new SerialPort(new File(portPath2), rate1, 0);
+                mOutputStream_1 = mSerialPort_1.getOutputStream();
+                mReadThread_1 = new ReadThread(mSerialPort_1, 1);
+            } catch (SecurityException e) {
+                //
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if(s2) {
+            try {
+                mSerialPort_2 = new SerialPort(new File(portPath3), rate2, 0);
+                mOutputStream_2 = mSerialPort_1.getOutputStream();
+                mReadThread_2 = new ReadThread(mSerialPort_2, 2);
+            } catch (SecurityException e) {
+                //
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
     private void doClientConnection(String uname, String upw,String device_no) {
         //屏蔽网络判断，防止在没有网络的时候，没有自动重连机制
@@ -196,7 +234,26 @@ public class YsCloudClientService extends Service {
             }
         }
     }
-
+    public void doSubscribeForDevId2(String devId) {
+        if (isConnectIsNomarl()) {
+            try {
+                String topic = MqttPropertise.TOPIC_SUBSCRIBE_DEV_RAW2.replaceAll("<Id>", devId);
+                ysCloudClient.SubscribeForTopic(topic);
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public void doSubscribeForDevCmd(String devId) {
+        if (isConnectIsNomarl()) {
+            try {
+                String topic = MqttPropertise.TOPIC_SUBSCRIBE_DEV_CMD.replaceAll("<Id>", devId);
+                ysCloudClient.SubscribeForTopic(topic);
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     public void doSubscribeForUsername() {
         if (isConnectIsNomarl()) {
             try {
@@ -279,16 +336,29 @@ public class YsCloudClientService extends Service {
     }
 
     public void publishForDevId(String devId, byte[] data) {
-      //  if (isConnectIsNomarl())
-        {
+
             try {
-           //     ysCloudClient.setUsrCloudMqttCallback(ysCloudClientCallback);
                 ysCloudClient.publishForDevId(devId, data);
                 data_count_mqtt_send+=data.length;
             } catch (MqttException e) {
                 e.printStackTrace();
             }
-        }
+    }
+    public void publishForDevId2(String devId, byte[] data) {
+            try {
+                ysCloudClient.publishForDevId2(devId, data);
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
+    }
+    //直接设备状态
+    public void publishForDevIdInfo(Device_info device_info) {
+            try {
+                String topic = MqttPropertise.TOPIC_PUBLISH_USER_INFO.replaceAll("<Id>", deviceid);
+                ysCloudClient.publishForDevTopic(topic, device_info.toString().getBytes());
+            } catch (MqttException e) {
+                e.printStackTrace();
+            }
     }
 
     public void publishParsedQueryDataPoint(String devId, String slaveIndex, String pointId) {
@@ -354,6 +424,7 @@ public class YsCloudClientService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        close_com_port();
         Log.d(TAG, "宇时4G服务已关闭！");
     }
 
@@ -409,9 +480,11 @@ public class YsCloudClientService extends Service {
             if(returnCode==2)
             {
                 //自动订阅设备原始数据流
+                doSubscribeForDevCmd(deviceid);
+                if(serail1_enable)
                 doSubscribeForDevId(deviceid);
-                //自动订阅Jason数据流 暂时不用
-              //  doSubscribeParsedByDevId(deviceid);
+                if(serail2_enable)
+                doSubscribeForDevId2(deviceid);
             }
         }
         @Override
@@ -452,15 +525,35 @@ public class YsCloudClientService extends Service {
         public void onReceiveEvent(int messageId, String topic, byte[] data) {
             //默认只会收到设备的非JSON数据
             data_count_mqtt_get+= data.length;
-            try
+            if(topic.contains("DevRx2"))
+            { try
             {
-            mOutputStream_1.write(data);
+            mOutputStream_2.write(data);
             }
-            catch (Exception e)
-            {
+             catch (Exception e)
+             {
+             }
+             return;
+            }
+            if(topic.contains("DevRx")){
+                try
+                {
+                    mOutputStream_1.write(data);
 
+                }
+                catch (Exception e)
+                {
+                }
+                return;
             }
-            //再采用串口发送数据出去
+            Intent intent = new Intent();
+            intent.setAction("onReceiveCmdEvent");//用隐式意图来启动广播
+            Bundle bundle = new Bundle();
+            bundle.putInt("messageId", messageId);
+            bundle.putString("topic", topic);
+            bundle.putString("cmddata", new String(data));
+            intent.putExtras(bundle);
+            mcontext.sendBroadcast(intent);
         }
 
     }

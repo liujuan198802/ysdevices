@@ -83,6 +83,13 @@ public class YsCloudMqttClientImpl implements MqttCallbackExtended, YsCloudMqttC
             this.Subscribe(topic);
         }
     }
+    public void SubscribeForTopic(String topic) throws MqttException {
+        if(this.mqttAsyncClient == null && !this.mqttAsyncClient.isConnected()) {
+            throw new MqttException(32104);
+        } else {
+            this.Subscribe(topic);
+        }
+    }
 
     public void SubscribeForUsername() throws MqttException {
         if(this.mqttAsyncClient == null && !this.mqttAsyncClient.isConnected()) {
@@ -194,6 +201,21 @@ public class YsCloudMqttClientImpl implements MqttCallbackExtended, YsCloudMqttC
         }
     }
 
+    public void publishForDevId2(String devId, byte[] data) throws MqttException {
+        if(this.mqttAsyncClient == null && !this.mqttAsyncClient.isConnected()) {
+            throw new MqttException(32104);
+        } else {
+            String topic = MqttPropertise.TOPIC_PUBLISH_DEV_RAW2.replaceAll("<Id>", devId);
+            this.PublishData(topic, data);
+        }
+    }
+    public void publishForDevTopic(String topic, byte[] data) throws MqttException {
+        if(this.mqttAsyncClient == null && !this.mqttAsyncClient.isConnected()) {
+            throw new MqttException(32104);
+        } else {
+            this.PublishData(topic, data);
+        }
+    }
     public void publishForuName(byte[] data) throws MqttException {
         if(this.mqttAsyncClient == null && !this.mqttAsyncClient.isConnected()) {
             throw new MqttException(32104);

@@ -32,6 +32,10 @@ public class YsCloudClient extends YsCloudMqttClientAdapter {
     public void SubscribeForUsername() throws MqttException {
         super.SubscribeForUsername();
     }
+    @Override
+    public void SubscribeForTopic(String topic) throws MqttException {
+        super.SubscribeForTopic(topic);
+    }
 
     @Override
     public void DisSubscribeforDevId(String devId) throws MqttException {
@@ -52,7 +56,14 @@ public class YsCloudClient extends YsCloudMqttClientAdapter {
     public void publishForDevId(String devId, byte[] data) throws MqttException {
         super.publishForDevId(devId, data);
     }
-
+    @Override
+    public void publishForDevId2(String devId, byte[] data) throws MqttException {
+        super.publishForDevId2(devId, data);
+    }
+    @Override
+    public void publishForDevTopic(String topic, byte[] data) throws MqttException {
+        super.publishForDevTopic(topic, data);
+    }
     @Override
     public void publishForuName(byte[] data) throws MqttException {
         super.publishForuName(data);

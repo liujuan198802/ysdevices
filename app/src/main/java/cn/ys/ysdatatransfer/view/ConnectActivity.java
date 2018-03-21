@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.PrivateKey;
 
+import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.R;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
@@ -58,6 +59,7 @@ public class ConnectActivity extends YsBaseActivity {
     private  Button btn_get_path;
     private TextView  device_id;
     private static String string_device_id;
+    private final  static String default_key_path ="/storage/emulated/0/Download/keyconfig";
     /**
      * 使用私钥进行解密
      */
@@ -106,7 +108,7 @@ public class ConnectActivity extends YsBaseActivity {
                 con_btn_connect.setText("正在启动宇时4G数传...");
                 con_btn_connect.setClickable(false);
                 con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
-                String uname = "18780126369";
+                String uname = MqttPropertise.USR_NAME;
                 String upw = "5234970";
                 Bundle bundle = new Bundle();
                 bundle.putString("uname", uname);
@@ -120,16 +122,18 @@ public class ConnectActivity extends YsBaseActivity {
         con_btn_connect.setClickable(false);
         con_btn_connect.setText("请先选择keyconfig文件！");
         progressBar.setVisibility(View.INVISIBLE);
-       string_device_id = mSharedPreferences.getString("deviceID","-1");
+        //   string_device_id = mSharedPreferences.getString("deviceID","-1");
+//       if(string_device_id!="-1")
+//       {
+//           device_id.setText(string_device_id);
+//           con_btn_connect.setClickable(true);
+//           con_btn_connect.setText("启动宇时4G数传");
+//           //  progressBar.setVisibility(View.VISIBLE);
+//           con_btn_connect.setBackgroundResource(R.drawable.button_shape);
+//           con_btn_connect.performClick();
+//       }
 
-       if(string_device_id!="-1")
-       {
-           device_id.setText(string_device_id);
-           con_btn_connect.setClickable(true);
-           con_btn_connect.setText("启动宇时4G数传");
-           //  progressBar.setVisibility(View.VISIBLE);
-           con_btn_connect.setBackgroundResource(R.drawable.button_shape);
-       }
+        re_connect_handler.postDelayed(runnable_read,1000);
     }
     Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -144,6 +148,7 @@ public class ConnectActivity extends YsBaseActivity {
                     con_btn_connect.setText("启动宇时4G数传");
                     //  progressBar.setVisibility(View.VISIBLE);
                     con_btn_connect.setBackgroundResource(R.drawable.button_shape);
+                    con_btn_connect.performClick();
                     break;
            }
         }
@@ -168,7 +173,7 @@ public class ConnectActivity extends YsBaseActivity {
         }
     }
     private static final int NETUPDATE=10;
-   private void get_keyconfig_and_jump(String path)
+   private boolean get_keyconfig_and_jump(String path)
    {
        Toast.makeText(this,"正在读取文件："+path,Toast.LENGTH_SHORT).show();
        try {
@@ -180,7 +185,7 @@ public class ConnectActivity extends YsBaseActivity {
        if(keyconfig == null)
        {
            Toast.makeText(this,"打开keyconfig文件失败！",Toast.LENGTH_SHORT).show();
-           return;
+           return false;
        }
        try
        {
@@ -189,22 +194,21 @@ public class ConnectActivity extends YsBaseActivity {
            if(string_device_id.length()!=20)
            {
                Toast.makeText(this,"deviceid错误！",Toast.LENGTH_SHORT).show();
-               return;
+               return false;
            }
            Message tempMsg = myHandler.obtainMessage();
            tempMsg.what = NETUPDATE;
            tempMsg.obj = string_device_id;
            myHandler.sendMessage(tempMsg);
-
            Log.e("device_id", string_device_id);
        }
        catch (Exception e)
        {
            e.printStackTrace();
            Toast.makeText(this,"读取keyconfig异常！",Toast.LENGTH_SHORT).show();
-           return;
+           return false;
        }
-
+            return  true;
    }
      //从文件从读取加密后的字符串
     private String readFile(String filePath){
@@ -399,6 +403,15 @@ public class ConnectActivity extends YsBaseActivity {
             // TODO Auto-generated method stub
                  //尝试自动重连
                 con_btn_connect.performClick();
+        }
+    };
+    Runnable runnable_read = new Runnable(){
+
+        public void run(){
+            // TODO Auto-generated method stub
+            //尝试自动读取
+            if(!get_keyconfig_and_jump(default_key_path))
+            re_connect_handler.postDelayed(this,4000);
         }
     };
     Handler re_connect_handler = new Handler();

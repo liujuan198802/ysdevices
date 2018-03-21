@@ -31,7 +31,10 @@ public class YsCloudMqttClientAdapter implements YsCloudMqttClient {
     public void SubscribeForDevId(String devId) throws MqttException {
         this.usrCloudMqttClient.SubscribeForDevId(devId);
     }
-
+    public void SubscribeForTopic(String topic) throws MqttException
+    {
+        this.usrCloudMqttClient.SubscribeForTopic(topic);
+    }
     public void SubscribeForUsername() throws MqttException {
         this.usrCloudMqttClient.SubscribeForUsername();
     }
@@ -51,7 +54,13 @@ public class YsCloudMqttClientAdapter implements YsCloudMqttClient {
     public void publishForDevId(String devId, byte[] data) throws MqttException {
         this.usrCloudMqttClient.publishForDevId(devId, data);
     }
-
+    public void publishForDevId2(String devId, byte[] data) throws MqttException {
+        this.usrCloudMqttClient.publishForDevId2(devId, data);
+    }
+    public void publishForDevTopic(String devId, byte[] data) throws MqttException
+    {
+        this.usrCloudMqttClient.publishForDevTopic(devId, data);
+    }
     public void publishForuName(byte[] data) throws MqttException {
         this.usrCloudMqttClient.publishForuName(data);
     }

@@ -17,6 +17,8 @@ public interface YsCloudMqttClient {
 
     void SubscribeForDevId(String var1) throws MqttException;
 
+    void SubscribeForTopic(String var1) throws MqttException;
+
     void SubscribeParsedByDevId(String var1) throws MqttException;
 
     void SubscribeForUsername() throws MqttException;
@@ -32,6 +34,10 @@ public interface YsCloudMqttClient {
     void DisSubscribeParsedForUsername() throws MqttException;
 
     void publishForDevId(String var1, byte[] var2) throws MqttException;
+
+    void publishForDevId2(String var1, byte[] var2) throws MqttException;
+
+    void publishForDevTopic(String var1, byte[] var2) throws MqttException;
 
     void publishForuName(byte[] var1) throws MqttException;
 

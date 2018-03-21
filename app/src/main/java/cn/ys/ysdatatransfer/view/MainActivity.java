@@ -14,17 +14,22 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alibaba.fastjson.JSONObject;
+
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import cn.ys.ysdatatransfer.R;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
+import cn.ys.ysdatatransfer.entity.Device_cmd;
+import cn.ys.ysdatatransfer.entity.Device_info;
 
 
 public class MainActivity extends YsBaseActivity implements View.OnClickListener {
@@ -66,21 +71,25 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                         img_mqtt_state.setBackgroundColor(Color.GREEN);
                 }
                 myService.publishForDevId(deviceid,"test".getBytes());
+                myService.publishForDevId2(deviceid,"test".getBytes());
+                Device_info device_info = new Device_info();
+                device_info.setClient_id(deviceid);
+                device_info.setInfo_name("test_info");
+                device_info.setInfo_state("test_state");
+                myService.publishForDevIdInfo(device_info);
             }
 
-            timer_handler.postDelayed(this, 400);
+            timer_handler.postDelayed(this, 500);
         }
     };
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             myService = ((YsCloudClientService.MyBinder) service).getService();
-         //   myService.set_deviceId(deviceid);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-          //  myService.stop_tcp_listen();
             myService = null;
         }
     };
@@ -110,7 +119,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         IntentFilter filter = new IntentFilter();
         filter.addAction("onSubscribeAck");
         filter.addAction("onDisSubscribeAck");
-        filter.addAction("onReceiveEvent");
+        filter.addAction("onReceiveCmdEvent");
         registerReceiver(onSubscribeReceiver, filter);
     }
 
@@ -187,23 +196,10 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         switch (v.getId()) {
             case R.id.main_btn_subscribe:
                 myService.doSubscribeForDevId(deviceid);
-//                try {
-//                 //   myService.start_tcp_server(local_port.getText().toString());
-//                } catch
-//            {
-//                    new AlertDialog.Builder(this)
-//                            .setTitle("错误")
-//                            .setMessage("请检查本地端口是否被占用！") .show();
-//                    set_click_state(true);
-//                    Toast.makeText(this, "宇时4G数传服务启动失败！", Toast.LENGTH_SHORT).show();
-//                    break;
-//                }
                 Toast.makeText(this, "宇时4G数传服务启动成功！", Toast.LENGTH_SHORT).show();
                 set_click_state(false);
                 break;
             case R.id.main_btn_publish:
-                //关闭TCP服务
-              //  myService.stop_tcp_listen();
                 set_click_state(true);
                 Toast.makeText(this, "宇时4G数传服务已停止！", Toast.LENGTH_SHORT).show();
                 break;
@@ -235,12 +231,31 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                 int messageId = bundle.getInt("messageId");
                 String devId = bundle.getString("CliendID");
                 int returnCode = bundle.getInt("returnCode");
-                if(returnCode!=0)
-                {
-                  //  myService.stop_tcp_listen();
+                if (returnCode != 0) {
+                    //  myService.stop_tcp_listen();
                     set_click_state(true);
                     Toast.makeText(MainActivity.this, "宇时4G数传连接设备失败！", Toast.LENGTH_SHORT).show();
                 }
+            } else if (action.equals("onReceiveCmdEvent")) {
+                Bundle bundle = intent.getExtras();
+                String msg = "";
+                int messageId = bundle.getInt("messageId");
+                String topic = bundle.getString("topic");
+                String jsondata = bundle.getString("cmddata");
+                try {
+                    JSONObject jsonObject = JSONObject.parseObject(jsondata);
+                   JSONObject jsonObject1 = jsonObject.getJSONObject("deviceCmd");
+                    Device_cmd device_cmd = new Device_cmd();
+                    device_cmd.setClient_id(jsonObject1.getString("client_id"));
+                    device_cmd.setCmd_name(jsonObject1.getString("cmd_name"));
+                    device_cmd.setCmd_state(jsonObject1.getString("cmd_state"));
+                    Log.d("宇时4G：","收到JSon："+device_cmd.toString());
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+
             }
         }
     }
