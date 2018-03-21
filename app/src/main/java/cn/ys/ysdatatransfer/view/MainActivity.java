@@ -233,7 +233,19 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         if(!device_cmd.getClient_id().equals(deviceid))
             return;
         //重启设备
-        if(device_cmd.getCmd_name().equals("reboot"));
+        if(device_cmd.getCmd_name().equals("reboot"))
+        {
+            Intent intent2 = new Intent(Intent.ACTION_REBOOT);
+            intent2.putExtra("nowait", 1);
+            intent2.putExtra("interval", 1);
+            intent2.putExtra("window", 0);
+            sendBroadcast(intent2);
+        };
+        //重启APP
+        if(device_cmd.getCmd_name().equals("restart"))
+        {
+            main_btn_disconnent.performClick();
+        };
         //上报设备信息
         if(device_cmd.getCmd_name().equals("get_sys_info"))
         {

@@ -106,8 +106,6 @@ public class ConnectActivity extends YsBaseActivity {
             public void onClick(View v) {
                 progressBar.setVisibility(View.VISIBLE);
                 con_btn_connect.setText("正在启动宇时4G数传...");
-                con_btn_connect.setClickable(false);
-                con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
                 String uname = MqttPropertise.USR_NAME;
                 String upw = "5234970";
                 Bundle bundle = new Bundle();
@@ -116,10 +114,9 @@ public class ConnectActivity extends YsBaseActivity {
                 bundle.putString("clientid", string_device_id);
                 USERNAME=uname;
                 startServiceWithParm(YsCloudClientService.class, bundle);
+                myHandler.postDelayed(runnable_connect,3000);
             }
         });
-        con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
-        con_btn_connect.setClickable(false);
         con_btn_connect.setText("请先选择keyconfig文件！");
         progressBar.setVisibility(View.INVISIBLE);
         //   string_device_id = mSharedPreferences.getString("deviceID","-1");
@@ -133,7 +130,7 @@ public class ConnectActivity extends YsBaseActivity {
 //           con_btn_connect.performClick();
 //       }
 
-        re_connect_handler.postDelayed(runnable_read,1000);
+        myHandler.postDelayed(runnable_read,1000);
     }
     Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
@@ -144,7 +141,6 @@ public class ConnectActivity extends YsBaseActivity {
                     device_id.setText(string_device_id);
                     editor.putString("deviceID",string_device_id);
                     editor.commit();
-                    con_btn_connect.setClickable(true);
                     con_btn_connect.setText("启动宇时4G数传");
                     //  progressBar.setVisibility(View.VISIBLE);
                     con_btn_connect.setBackgroundResource(R.drawable.button_shape);
@@ -397,27 +393,28 @@ public class ConnectActivity extends YsBaseActivity {
             );
         }
     }
-    Runnable runnable = new Runnable(){
-
-        public void run(){
-            // TODO Auto-generated method stub
-                 //尝试自动重连
-                con_btn_connect.performClick();
-        }
-    };
     Runnable runnable_read = new Runnable(){
-
         public void run(){
             // TODO Auto-generated method stub
-            //尝试自动读取
             if(!get_keyconfig_and_jump(default_key_path))
-            re_connect_handler.postDelayed(this,4000);
+            myHandler.postDelayed(this,2000);
         }
     };
-    Handler re_connect_handler = new Handler();
+    Runnable runnable_connect = new Runnable(){
+        public void run(){
+            // TODO Auto-generated method stub
+           con_btn_connect.performClick();
+        }
+    };
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
+                try {
+                    myHandler.removeCallbacks(runnable_connect);
+                }
+                catch (RuntimeException e)
+                {
+                }
                Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
                 intent1.putExtra("deviceid",string_device_id);
                 startActivity(intent1);
@@ -428,7 +425,13 @@ public class ConnectActivity extends YsBaseActivity {
                 progressBar.setVisibility(View.INVISIBLE);
                 con_btn_connect.setBackgroundResource(R.drawable.button_shape);
                 //2s后自动重连
-                re_connect_handler.postDelayed(runnable,2000);
+                try {
+                    myHandler.removeCallbacks(runnable_connect);
+                }
+                catch (RuntimeException e)
+                {
+                }
+                myHandler.postDelayed(runnable_connect,2000);
             }
 
         }

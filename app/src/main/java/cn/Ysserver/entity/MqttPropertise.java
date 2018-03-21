@@ -20,7 +20,7 @@ public class MqttPropertise {
     private static OutputStream fos;
    // public static final String SERVER_ADDRESS ="tcp://service.cloudoftime.com:1883";
     //测试地址
-    public static final String SERVER_ADDRESS ="tcp://192.168.1.125:1883";
+    public static final String SERVER_ADDRESS ="tcp://192.168.88.180:1883";
     public static final String USR_NAME="usr_buy_device";
     public static final String CLIENTID_PREFIX;
     public static final String TOPIC_SUBSCRIBE_DEV_RAW;

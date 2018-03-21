@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:installLocation="auto"
     package="cn.ys.ysdatatransfer">
-
+    <!--  android:sharedUserId="android.uid.system" -->
 
     <!-- MQTT权限 -->
 
