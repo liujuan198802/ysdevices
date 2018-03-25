@@ -30,4 +30,5 @@ dependencies {
     implementation 'com.android.support:design:26.1.0'
     implementation files('libs/org.eclipse.paho.client.mqttv3-1.2.0.jar')
     implementation files('libs/temolin_hardware.jar')
+    implementation files('libs/BaiduLBS_Android.jar')
 }

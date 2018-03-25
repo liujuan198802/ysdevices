@@ -1,24 +1,17 @@
 package cn.ys.ysdatatransfer.view;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -35,14 +28,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.security.PrivateKey;
 
-import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.R;
+import cn.ys.ysdatatransfer.base.YsApplication;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
-
-import static cn.ys.ysdatatransfer.base.YsApplication.USERNAME;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
@@ -58,13 +50,44 @@ public class ConnectActivity extends YsBaseActivity {
     private SharedPreferences.Editor editor;
     private  Button btn_get_path;
     private TextView  device_id;
-    private static String string_device_id;
+    private static String string_device_pwd;
     private final  static String default_key_path ="/storage/emulated/0/Download/keyconfig";
     /**
      * 使用私钥进行解密
      */
     private String strprivatekey = "<RSAKeyValue><Modulus>uOqxIXLFeDL9n1u+yo9LNzRxoV6U04YYenAXIbJ/CAO6wbjBaf9m6Sw9mJXoJr3IA9w6Plw1wgLrBLP0ngW7cFSQVbT/p2zx5NhDLTZ6NeHV+lZNLSFL6niUvDCBIyrims8VG7+FLXqrjBa0YOny5MhCdP2K67lNCBUwlDr+nLs=</Modulus><Exponent>AQAB</Exponent><P>xyscDUZcb7beXz60mUSMtTOuzxSCmqqXlgP1bhGr5RCBSADIeZoy8+k2ILfzTDorlwd9pqSbFBf/W4rVGp6d4w==</P><Q>7a6Gx+flU3M2YJFQ+8qVD08j8vjcoSG3JaSfUB5Z3WE1ZPug36LSjIgZ4EsZQ9mjreVgYkxylkhAwiDfSHG9SQ==</Q><DP>BoM7XJfDaAfDx7uGLkjWjQpOmgjiqGoRoN8qRFohk9DxWUhlRcysA9vJYFKDiyePy1V8X1mclJCgUf79Luym3w==</DP><DQ>vEaFyZDuXd5j8rbp2aqtzQS5y1xLGPCmLZFsCYEhWnYIX8fbtYs7Ecs2BDA5AUBDohqS8Qrxsg3mDmEPvkkq0Q==</DQ><InverseQ>stTU8PLYXfq391Er67p5yfYdsEdnXQBaQESIWAnxUE2QmqRZ00rX3MnbhkvcMlFxfoOrfOWJWTEQQKiTtHQs5g==</InverseQ><D>AZpZP7VPjaU+VU3VaJjD3KN8+gGJFCQ+CtLC+pwYBskwtMHu5/vxtVmnlx0TgqrGhac4iBGUXIox+ZO8b1FgB63o+1ihdAefG7siXpsL5adO85hjuQs1XIpC63Fm2WMi8yYNnS8QB0v7G+CKdTtWDEkfpyUBB74Kb9bihEZ1AHE=</D></RSAKeyValue>";
     private  PrivateKey privateKey = RsaHelper.decodePrivateKeyFromXml(strprivatekey);
+
+    Runnable runnable_read = new Runnable(){
+        public void run(){
+            // TODO Auto-generated method stub
+           get_keyconfig_and_jump(default_key_path);
+        }
+    };
+    Runnable runnable_connect = new Runnable(){
+        public void run(){
+            // TODO Auto-generated method stub
+            con_btn_connect.setClickable(true);
+            con_btn_connect.performClick();
+        }
+    };
+    Handler myHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case NETUPDATE:
+                    string_device_pwd= ((String) msg.obj);
+                    device_id.setText(string_device_pwd);
+                    editor.putString("deviceID",string_device_pwd);
+                    editor.commit();
+                    con_btn_connect.setText("启动宇时4G数传");
+                    con_btn_connect.setBackgroundResource(R.drawable.button_shape);
+                    con_btn_connect.setClickable(true);
+                    con_btn_connect.performClick();
+                    break;
+            }
+        }
+    };
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,83 +114,30 @@ public class ConnectActivity extends YsBaseActivity {
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         btn_get_path = (Button)   findViewById(R.id.btn_choosekey);
         device_id  = (TextView) findViewById(R.id.textView);
-        btn_get_path.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                myPermission();
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("*/*");//无类型限制
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                startActivityForResult(intent, 1);
-            }
-        });
         con_btn_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 progressBar.setVisibility(View.VISIBLE);
                 con_btn_connect.setText("正在启动宇时4G数传...");
-                String uname = MqttPropertise.USR_NAME;
-                String upw = "5234970";
+                con_btn_connect.setClickable(false);
+                String uname = YsApplication.USERNAME;
                 Bundle bundle = new Bundle();
                 bundle.putString("uname", uname);
-                bundle.putString("upw", upw);
-                bundle.putString("clientid", string_device_id);
-                USERNAME=uname;
+                bundle.putString("upw", string_device_pwd);
+                bundle.putString("clientid", YsApplication.getCLIENTID());
                 startServiceWithParm(YsCloudClientService.class, bundle);
                 myHandler.postDelayed(runnable_connect,3000);
             }
         });
+       // setWifiApEnabled(true,(WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE),"YS4Gdevice","YS4Gdevice");
         con_btn_connect.setText("请先选择keyconfig文件！");
         progressBar.setVisibility(View.INVISIBLE);
         //   string_device_id = mSharedPreferences.getString("deviceID","-1");
-//       if(string_device_id!="-1")
-//       {
-//           device_id.setText(string_device_id);
-//           con_btn_connect.setClickable(true);
-//           con_btn_connect.setText("启动宇时4G数传");
-//           //  progressBar.setVisibility(View.VISIBLE);
-//           con_btn_connect.setBackgroundResource(R.drawable.button_shape);
-//           con_btn_connect.performClick();
-//       }
-
         myHandler.postDelayed(runnable_read,1000);
+        setWifiApEnabled(true,(WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE),"Y4GClient:"+YsApplication.getCLIENTID(),"cloudoftime");
     }
-    Handler myHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case NETUPDATE:
-                    string_device_id= ((String) msg.obj);
-                    device_id.setText(string_device_id);
-                    editor.putString("deviceID",string_device_id);
-                    editor.commit();
-                    con_btn_connect.setText("启动宇时4G数传");
-                    //  progressBar.setVisibility(View.VISIBLE);
-                    con_btn_connect.setBackgroundResource(R.drawable.button_shape);
-                    con_btn_connect.performClick();
-                    break;
-           }
-        }
-    };
-    String path;
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK) {
-            Uri uri = data.getData();
-            if ("file".equalsIgnoreCase(uri.getScheme())){//使用第三方应用打开
-                path = uri.getPath();
-                get_keyconfig_and_jump(path);
-                return;
-            }
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT) {//4.4以后
-                path = getPath(this, uri);
-                get_keyconfig_and_jump(path);
-            } else {//4.4以下下系统调用方法
-                path = getRealPathFromURI(uri);
-                get_keyconfig_and_jump(path);
-            }
-        }
-    }
+
+
     private static final int NETUPDATE=10;
    private boolean get_keyconfig_and_jump(String path)
    {
@@ -185,18 +155,17 @@ public class ConnectActivity extends YsBaseActivity {
        }
        try
        {
-           string_device_id = new String(RsaHelper.decryptData(
+           string_device_pwd = new String(RsaHelper.decryptData(
                    Base64Helper.decode(keyconfig), privateKey), "UTF-8");
-           if(string_device_id.length()!=20)
+           if(string_device_pwd.length()!=20)
            {
                Toast.makeText(this,"deviceid错误！",Toast.LENGTH_SHORT).show();
                return false;
            }
            Message tempMsg = myHandler.obtainMessage();
            tempMsg.what = NETUPDATE;
-           tempMsg.obj = string_device_id;
+           tempMsg.obj = string_device_pwd;
            myHandler.sendMessage(tempMsg);
-           Log.e("device_id", string_device_id);
        }
        catch (Exception e)
        {
@@ -237,133 +206,6 @@ public class ConnectActivity extends YsBaseActivity {
         return  file_data;
     }
 
-    public String getRealPathFromURI(Uri contentUri) {
-        String res = null;
-        String[] proj = { MediaStore.Images.Media.DATA };
-        Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
-        if(null!=cursor&&cursor.moveToFirst()){;
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            res = cursor.getString(column_index);
-            cursor.close();
-        }
-        return res;
-    }
-
-    /**
-     * 专为Android4.4设计的从Uri获取文件绝对路径，以前的方法已不好使
-     */
-    @SuppressLint("NewApi")
-    public String getPath(final Context context, final Uri uri) {
-
-        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
-
-        // DocumentProvider
-        if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
-            // ExternalStorageProvider
-            if (isExternalStorageDocument(uri)) {
-                final String docId = DocumentsContract.getDocumentId(uri);
-                final String[] split = docId.split(":");
-                final String type = split[0];
-
-                if ("primary".equalsIgnoreCase(type)) {
-                    return Environment.getExternalStorageDirectory() + "/" + split[1];
-                }
-            }
-            // DownloadsProvider
-            else if (isDownloadsDocument(uri)) {
-
-                final String id = DocumentsContract.getDocumentId(uri);
-                final Uri contentUri = ContentUris.withAppendedId(
-                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
-
-                return getDataColumn(context, contentUri, null, null);
-            }
-            // MediaProvider
-            else if (isMediaDocument(uri)) {
-                final String docId = DocumentsContract.getDocumentId(uri);
-                final String[] split = docId.split(":");
-                final String type = split[0];
-
-                Uri contentUri = null;
-                if ("image".equals(type)) {
-                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-                } else if ("video".equals(type)) {
-                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-                } else if ("audio".equals(type)) {
-                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-                }
-
-                final String selection = "_id=?";
-                final String[] selectionArgs = new String[]{split[1]};
-
-                return getDataColumn(context, contentUri, selection, selectionArgs);
-            }
-        }
-        // MediaStore (and general)
-        else if ("content".equalsIgnoreCase(uri.getScheme())) {
-            return getDataColumn(context, uri, null, null);
-        }
-        // File
-        else if ("file".equalsIgnoreCase(uri.getScheme())) {
-            return uri.getPath();
-        }
-        return null;
-    }
-
-    /**
-     * Get the value of the data column for this Uri. This is useful for
-     * MediaStore Uris, and other file-based ContentProviders.
-     *
-     * @param context       The context.
-     * @param uri           The Uri to query.
-     * @param selection     (Optional) Filter used in the query.
-     * @param selectionArgs (Optional) Selection arguments used in the query.
-     * @return The value of the _data column, which is typically a file path.
-     */
-    public String getDataColumn(Context context, Uri uri, String selection,
-                                String[] selectionArgs) {
-
-        Cursor cursor = null;
-        final String column = "_data";
-        final String[] projection = {column};
-
-        try {
-            cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs,
-                    null);
-            if (cursor != null && cursor.moveToFirst()) {
-                final int column_index = cursor.getColumnIndexOrThrow(column);
-                return cursor.getString(column_index);
-            }
-        } finally {
-            if (cursor != null)
-                cursor.close();
-        }
-        return null;
-    }
-
-    /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is ExternalStorageProvider.
-     */
-    public boolean isExternalStorageDocument(Uri uri) {
-        return "com.android.externalstorage.documents".equals(uri.getAuthority());
-    }
-
-    /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is DownloadsProvider.
-     */
-    public boolean isDownloadsDocument(Uri uri) {
-        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
-    }
-
-    /**
-     * @param uri The Uri to check.
-     * @return Whether the Uri authority is MediaProvider.
-     */
-    public boolean isMediaDocument(Uri uri) {
-        return "com.android.providers.media.documents".equals(uri.getAuthority());
-    }
 
     @Override
     protected void onStop() {
@@ -393,19 +235,30 @@ public class ConnectActivity extends YsBaseActivity {
             );
         }
     }
-    Runnable runnable_read = new Runnable(){
-        public void run(){
-            // TODO Auto-generated method stub
-            if(!get_keyconfig_and_jump(default_key_path))
-            myHandler.postDelayed(this,2000);
+
+    // wifi热点开关
+    public boolean setWifiApEnabled(boolean enabled, WifiManager wifiManager, String ap_name, String ap_pwd) {
+        if (enabled) { // disable WiFi in any case
+            //wifi和热点不能同时打开，所以打开热点的时候需要关闭wifi
+            wifiManager.setWifiEnabled(false);
         }
-    };
-    Runnable runnable_connect = new Runnable(){
-        public void run(){
-            // TODO Auto-generated method stub
-           con_btn_connect.performClick();
+        try {
+            //热点的配置类
+            WifiConfiguration apConfig = new WifiConfiguration();
+            //配置热点的名称(可以在名字后面加点随机数什么的)
+            apConfig.SSID = ap_name;
+            //配置热点的密码
+            apConfig.preSharedKey=ap_pwd;
+            //通过反射调用设置热点
+            Method method = wifiManager.getClass().getMethod(
+                    "setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
+            //返回热点打开状态
+            return (Boolean) method.invoke(wifiManager, apConfig, enabled);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-    };
+    }
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
@@ -416,7 +269,7 @@ public class ConnectActivity extends YsBaseActivity {
                 {
                 }
                Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
-                intent1.putExtra("deviceid",string_device_id);
+                intent1.putExtra("deviceid",string_device_pwd);
                 startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
                 Toast.makeText(ConnectActivity.this, "宇时4G数传启动失败\r\n请检查网络是否畅通!", Toast.LENGTH_SHORT).show();

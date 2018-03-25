@@ -25,10 +25,10 @@ import com.alibaba.fastjson.JSONObject;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
 
-import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.R;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
+import cn.ys.ysdatatransfer.business.YsDeal_Cmd;
 import cn.ys.ysdatatransfer.entity.Device_cmd;
 import cn.ys.ysdatatransfer.entity.Device_info;
 
@@ -224,70 +224,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                 break;
         }
     }
-    private void  deal_with_dev_cmd(Device_cmd device_cmd)
-    {
-        if(device_cmd.getCmd_name()== null)
-            return;
-        if(device_cmd.getClient_id()==null)
-            return;
-        if(!device_cmd.getClient_id().equals(deviceid))
-            return;
-        //重启设备
-        if(device_cmd.getCmd_name().equals("reboot"))
-        {
-            Intent intent2 = new Intent(Intent.ACTION_REBOOT);
-            intent2.putExtra("nowait", 1);
-            intent2.putExtra("interval", 1);
-            intent2.putExtra("window", 0);
-            sendBroadcast(intent2);
-        };
-        //重启APP
-        if(device_cmd.getCmd_name().equals("restart"))
-        {
-            main_btn_disconnent.performClick();
-        };
-        //上报设备信息
-        if(device_cmd.getCmd_name().equals("get_sys_info"))
-        {
 
-        }
-        if(device_cmd.getCmd_name().equals("baudrate_serail1"))
-        {
-            MqttPropertise.setproperty("baudrate_serail1",device_cmd.getCmd_state());
-            Device_info device_info = new Device_info();
-            device_info.setClient_id(deviceid);
-            device_info.setInfo_name("baudrate_serail1");
-            device_info.setInfo_state(MqttPropertise.getproperty("baudrate_serail1"));
-            myService.publishForDevIdInfo(device_info);return;
-        }
-        if(device_cmd.getCmd_name().equals("baudrate_serial2"))
-        {
-            MqttPropertise.setproperty("baudrate_serial2",device_cmd.getCmd_state());
-            Device_info device_info = new Device_info();
-            device_info.setClient_id(deviceid);
-            device_info.setInfo_name("baudrate_serial2");
-            device_info.setInfo_state(MqttPropertise.getproperty("baudrate_serial2"));
-            myService.publishForDevIdInfo(device_info);return;
-        }
-        if(device_cmd.getCmd_name().equals("enable_serail1"))
-        {
-            MqttPropertise.setproperty("enable_serail1",device_cmd.getCmd_state());
-            Device_info device_info = new Device_info();
-            device_info.setClient_id(deviceid);
-            device_info.setInfo_name("enable_serail1");
-            device_info.setInfo_state(MqttPropertise.getproperty("enable_serail1"));
-            myService.publishForDevIdInfo(device_info);return;
-        }
-        if(device_cmd.getCmd_name().equals("enable_serail2"))
-        {
-            MqttPropertise.setproperty("enable_serail2",device_cmd.getCmd_state());
-            Device_info device_info = new Device_info();
-            device_info.setClient_id(deviceid);
-            device_info.setInfo_name("enable_serail2");
-            device_info.setInfo_state(MqttPropertise.getproperty("enable_serail2"));
-            myService.publishForDevIdInfo(device_info);return;
-        }
-    }
     public class OnSubscribeReceiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -315,7 +252,16 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                     device_cmd.setCmd_name(jsonObject1.getString("cmd_name"));
                     device_cmd.setCmd_state(jsonObject1.getString("cmd_state"));
                     Log.d("宇时4G：","收到JSon："+device_cmd.toString());
-                    deal_with_dev_cmd(device_cmd);
+                    if(device_cmd.getCmd_name().equals("restart"))
+                    {
+                        main_btn_disconnent.performClick();
+                        return;
+                    }
+                  else {
+                       Device_info device_info=YsDeal_Cmd.dealwithcmd(device_cmd);
+                       if(device_info!=null)
+                           myService.publishForDevIdInfo(device_info);
+                    }
                 }
                 catch(Exception e)
                 {
