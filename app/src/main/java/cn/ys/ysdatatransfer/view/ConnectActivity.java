@@ -68,7 +68,7 @@ public class ConnectActivity extends YsBaseActivity {
             con_btn_connect.performClick();
         }
     };
-    Handler myHandler = new Handler() {
+     Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
@@ -100,6 +100,10 @@ public class ConnectActivity extends YsBaseActivity {
         IntentFilter filter = new IntentFilter();
         filter.addAction("onConnectAck");
         registerReceiver(receiver, filter);
+        //连续启动Service
+        //连续启动Service
+        Intent intent1 = new Intent(this, YsCloudClientService.class);
+        startService(intent1);
     }
     @Override
     public void initView() {

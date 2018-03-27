@@ -84,11 +84,15 @@ public class YsCloudClientService extends Service {
     public void send_state_all(Device_info device_info)
     {
         try {
-            udpClients_cmd.send(device_info.toString().getBytes("GBK"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            try {
+                udpClients_cmd.send(device_info.toString().getBytes("GBK"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            publishForDevIdInfo(device_info);
         }
-        publishForDevIdInfo(device_info);
+       catch (RuntimeException e)
+       {}
     }
     private Runnable charg_runable = new Runnable() {
         @Override
@@ -272,11 +276,16 @@ public class YsCloudClientService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         System.out.println("onStartCommand");
-        Bundle bundle = intent.getExtras();
-        uName = bundle.getString("uname");
-        uPW = bundle.getString("upw");
-        deviceid = bundle.getString("clientid");
-        doClientConnection(uName, uPW,deviceid);
+        try {
+            Bundle bundle = intent.getExtras();
+            uName = bundle.getString("uname");
+            uPW = bundle.getString("upw");
+            deviceid = bundle.getString("clientid");
+            doClientConnection(uName, uPW,deviceid);
+        }
+        catch (RuntimeException e)
+        {
+        }
         return super.onStartCommand(intent, flags, startId);
     }
     private void close_com_port()

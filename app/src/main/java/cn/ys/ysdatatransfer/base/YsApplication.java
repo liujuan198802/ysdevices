@@ -72,8 +72,8 @@ public class YsApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+         initUsrCrashHandler();
         USERNAME = MqttPropertise.USR_NAME;
-          initUsrCrashHandler();
         CLIENTID = getDeviceSerial();
         //强制设定WIFI模式为AP模式
       //  setWifiApEnabled(true,(WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE),"Y4GClient:"+YsApplication.getCLIENTID(),"cloudoftime");
