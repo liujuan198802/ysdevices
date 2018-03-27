@@ -1,8 +1,13 @@
 package cn.ys.ysdatatransfer.base;
 
 import android.app.Application;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Vibrator;
 import android.util.Log;
@@ -16,6 +21,9 @@ import org.json.JSONObject;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.SocketException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.view.LocationService;
@@ -31,7 +39,12 @@ public class YsApplication extends Application {
     private YsCrashHandler ysCrashHandler;
     private static YsApplication instance;
     private static Toast toast;
-    public final static String USERNAME =  MqttPropertise.USR_NAME;;
+
+    public static String getUSERNAME() {
+        return USERNAME;
+    }
+
+    private  static String USERNAME ;;
 
     public static String getCLIENTID() {
         return CLIENTID;
@@ -48,22 +61,81 @@ public class YsApplication extends Application {
     private static String location_lon;
     private static String location_pos;
 
+    public static String getBoradcastIP() {
+        return BoradcastIP;
+    }
+
+    private static String BoradcastIP;
+
 
     @Override
     public void onCreate() {
         super.onCreate();
         instance = this;
-        //initUsrCrashHandler();
+        USERNAME = MqttPropertise.USR_NAME;
+          initUsrCrashHandler();
+        CLIENTID = getDeviceSerial();
+        //强制设定WIFI模式为AP模式
+      //  setWifiApEnabled(true,(WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE),"Y4GClient:"+YsApplication.getCLIENTID(),"cloudoftime");
+        //强制打开GPS
+        openGPS(this);
+        try {
+            BoradcastIP = IPUtils.getIp(this);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
         locationService = new LocationService(this);
         mVibrator = (Vibrator) getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);
         locationService.registerListener(mListener);
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
         locationService.start();// 定位SDK
-        CLIENTID = getDeviceSerial();
         // start之后会默认发起一次定位请求，开发者无须判断isstart并主动调用request
     }
+    public static String getNowTime(){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
+        Date date = new Date(System.currentTimeMillis());
+        return simpleDateFormat.format(date);
+    }
 
-
+    // wifi热点开关
+    public boolean setWifiApEnabled(boolean enabled, WifiManager wifiManager, String ap_name, String ap_pwd) {
+        if (enabled) { // disable WiFi in any case
+            //wifi和热点不能同时打开，所以打开热点的时候需要关闭wifi
+            wifiManager.setWifiEnabled(false);
+        }
+        try {
+            //热点的配置类
+            WifiConfiguration apConfig = new WifiConfiguration();
+            //配置热点的名称(可以在名字后面加点随机数什么的)
+            apConfig.SSID = ap_name;
+            //配置热点的密码
+            apConfig.preSharedKey=ap_pwd;
+            //通过反射调用设置热点
+            Method method = wifiManager.getClass().getMethod(
+                    "setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
+            //返回热点打开状态
+            return (Boolean) method.invoke(wifiManager, apConfig, enabled);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    /**
+     * 强制帮打开GPS
+     * @param context
+     */
+    public static final void openGPS(Context context) {
+        Intent GPSIntent = new Intent();
+        GPSIntent.setClassName("com.android.settings",
+                "com.android.settings.widget.SettingsAppWidgetProvider");
+        GPSIntent.addCategory("android.intent.category.ALTERNATIVE");
+        GPSIntent.setData(Uri.parse("custom:3"));
+        try {
+            PendingIntent.getBroadcast(context, 0, GPSIntent, 0).send();
+        } catch (PendingIntent.CanceledException e) {
+            e.printStackTrace();
+        }
+    }
     //Application 的回掉方法
     public static final YsApplication getInstance() {
         return instance;

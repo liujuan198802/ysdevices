@@ -21,7 +21,7 @@ public class MqttPropertise {
    // public static final String SERVER_ADDRESS ="tcp://service.cloudoftime.com:1883";
     //测试地址
     public static final String SERVER_ADDRESS ="tcp://192.168.88.180:1883";
-    public static final String USR_NAME="usr_buy_device";
+    public static final String USR_NAME;
     public static final String CLIENTID_PREFIX;
     public static final String TOPIC_SUBSCRIBE_DEV_RAW;
     public static final String TOPIC_SUBSCRIBE_DEV_RAW2;
@@ -34,10 +34,12 @@ public class MqttPropertise {
     public static final String TOPIC_PUBLISH_DEV_PARSED;
     public static final String JSON_SETDATAPOINT;
     public static final String JSON_QUERYDATAPOINT;
-    public static  String SERIAL1_RATE;
-    public static  String SERIAL2_RATE;
-    public static  String SERIAL1_ENABLE;
-    public static  String SERIAL2_ENABLE;
+    public static final String SERIAL1_RATE;
+    public static final String SERIAL2_RATE;
+    public static  final String SERIAL1_ENABLE;
+    public static  final String SERIAL2_ENABLE;
+    public static final String  UDP_PORT1;
+    public static  final String UDP_PORT2;
     public static final String TOPIC_SUBSCRIBE_DEV_CMD;
     public static final String TOPIC_PUBLISH_USER_INFO;
     public static final String DEVID = "<Id>";
@@ -100,6 +102,9 @@ public class MqttPropertise {
         SERIAL2_RATE = prop.getProperty("baudrate_serial2");
         SERIAL1_ENABLE= prop.getProperty("enable_serail1");
         SERIAL2_ENABLE = prop.getProperty("enable_serail2");
+        UDP_PORT1 = prop.getProperty("udp_port1");
+        UDP_PORT2 = prop.getProperty("udp_port2");
+        USR_NAME =prop.getProperty("device_usr_name");
         TOPIC_PUBLISH_USER_INFO ="$USR/DevInfo/<Id>";
         TOPIC_SUBSCRIBE_DEV_CMD = "$USR/DevCmd/<Id>";
     }

@@ -1,6 +1,7 @@
 package cn.ys.ysdatatransfer.base;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -24,6 +25,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import cn.ys.ysdatatransfer.business.YsCloudClientService;
 
 /**
  * usr 异常处理类
@@ -104,6 +107,8 @@ public class YsCrashHandler implements Thread.UncaughtExceptionHandler {
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
+            Intent intent = new Intent(YsApplication.getInstance(), YsCloudClientService.class);
+            YsApplication.getInstance().getApplicationContext().stopService(intent);
             Process.killProcess(Process.myPid());
             System.exit(1);
         }

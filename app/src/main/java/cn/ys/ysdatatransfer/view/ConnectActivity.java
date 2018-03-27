@@ -7,8 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -28,7 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 import java.security.PrivateKey;
 
 import cn.ys.ysdatatransfer.R;
@@ -104,7 +101,6 @@ public class ConnectActivity extends YsBaseActivity {
         filter.addAction("onConnectAck");
         registerReceiver(receiver, filter);
     }
-
     @Override
     public void initView() {
         super.initView();
@@ -114,19 +110,25 @@ public class ConnectActivity extends YsBaseActivity {
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         btn_get_path = (Button)   findViewById(R.id.btn_choosekey);
         device_id  = (TextView) findViewById(R.id.textView);
+        btn_get_path.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
         con_btn_connect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 progressBar.setVisibility(View.VISIBLE);
                 con_btn_connect.setText("正在启动宇时4G数传...");
                 con_btn_connect.setClickable(false);
-                String uname = YsApplication.USERNAME;
+                con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
+                String uname = YsApplication.getUSERNAME();
                 Bundle bundle = new Bundle();
                 bundle.putString("uname", uname);
                 bundle.putString("upw", string_device_pwd);
                 bundle.putString("clientid", YsApplication.getCLIENTID());
                 startServiceWithParm(YsCloudClientService.class, bundle);
-                myHandler.postDelayed(runnable_connect,3000);
             }
         });
        // setWifiApEnabled(true,(WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE),"YS4Gdevice","YS4Gdevice");
@@ -134,7 +136,7 @@ public class ConnectActivity extends YsBaseActivity {
         progressBar.setVisibility(View.INVISIBLE);
         //   string_device_id = mSharedPreferences.getString("deviceID","-1");
         myHandler.postDelayed(runnable_read,1000);
-        setWifiApEnabled(true,(WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE),"Y4GClient:"+YsApplication.getCLIENTID(),"cloudoftime");
+
     }
 
 
@@ -235,32 +237,12 @@ public class ConnectActivity extends YsBaseActivity {
             );
         }
     }
-
-    // wifi热点开关
-    public boolean setWifiApEnabled(boolean enabled, WifiManager wifiManager, String ap_name, String ap_pwd) {
-        if (enabled) { // disable WiFi in any case
-            //wifi和热点不能同时打开，所以打开热点的时候需要关闭wifi
-            wifiManager.setWifiEnabled(false);
-        }
-        try {
-            //热点的配置类
-            WifiConfiguration apConfig = new WifiConfiguration();
-            //配置热点的名称(可以在名字后面加点随机数什么的)
-            apConfig.SSID = ap_name;
-            //配置热点的密码
-            apConfig.preSharedKey=ap_pwd;
-            //通过反射调用设置热点
-            Method method = wifiManager.getClass().getMethod(
-                    "setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
-            //返回热点打开状态
-            return (Boolean) method.invoke(wifiManager, apConfig, enabled);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
+            progressBar.setVisibility(View.INVISIBLE);
+            con_btn_connect.setText("启动宇时4G数传");
+            con_btn_connect.setClickable(true);
+            con_btn_connect.setBackgroundResource(R.drawable.button_shape);
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
                 try {
                     myHandler.removeCallbacks(runnable_connect);
@@ -273,10 +255,6 @@ public class ConnectActivity extends YsBaseActivity {
                 startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
                 Toast.makeText(ConnectActivity.this, "宇时4G数传启动失败\r\n请检查网络是否畅通!", Toast.LENGTH_SHORT).show();
-                con_btn_connect.setClickable(true);
-                con_btn_connect.setText("启动宇时4G数传");
-                progressBar.setVisibility(View.INVISIBLE);
-                con_btn_connect.setBackgroundResource(R.drawable.button_shape);
                 //2s后自动重连
                 try {
                     myHandler.removeCallbacks(runnable_connect);
@@ -284,7 +262,7 @@ public class ConnectActivity extends YsBaseActivity {
                 catch (RuntimeException e)
                 {
                 }
-                myHandler.postDelayed(runnable_connect,2000);
+                myHandler.postDelayed(runnable_connect,4000);
             }
 
         }

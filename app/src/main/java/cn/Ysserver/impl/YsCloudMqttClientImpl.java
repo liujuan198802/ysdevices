@@ -35,14 +35,14 @@ public class YsCloudMqttClientImpl implements MqttCallbackExtended, YsCloudMqttC
     }
 
     public void Connect(String userName, String passWord,String device_id) throws MqttException {
-        String clientId = device_id;
+        String clientId ="DEVICE:"+ device_id;
         this.userName = userName;
         this.mqttAsyncClient = new MqttAsyncClient(MqttPropertise.SERVER_ADDRESS, clientId, new MemoryPersistence());
         MqttConnectOptions options = new MqttConnectOptions();
         options.setCleanSession(true);
         options.setUserName(userName);
         options.setPassword(BeasUtils.getMD5(passWord).toCharArray());
-        options.setConnectionTimeout(20);
+        options.setConnectionTimeout(5);
         options.setKeepAliveInterval(600);
         options.setAutomaticReconnect(true);
         this.mqttAsyncClient.setCallback(this);
