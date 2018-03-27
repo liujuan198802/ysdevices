@@ -108,8 +108,8 @@ public class YsCloudClientService extends Service {
             final String action = intent.getAction();
             //充电类型 BatteryManager.BATTERY_PLUGGED_AC 表示是充电器，不是这个值，表示是 USB
             int plugged = intent.getIntExtra("plugged",0);
-            device_info_retrun.setInfo_state("plugged:"+plugged+YsApplication.getNowTime());
-            send_state_all(device_info_retrun);
+//            device_info_retrun.setInfo_state("plugged:"+plugged+YsApplication.getNowTime());
+//            send_state_all(device_info_retrun);
                 if(plugged!=0) {
                     //DoSomeThing
                         device_info_retrun.setInfo_state("宇时4G已通电..."+YsApplication.getNowTime());
@@ -123,9 +123,9 @@ public class YsCloudClientService extends Service {
                         }
                     }
                 else {
-                        device_info_retrun.setInfo_state("宇时4G已经断电，将在60S后关闭设备！"+YsApplication.getNowTime());
+                        device_info_retrun.setInfo_state("宇时4G已经断电，将在30S后关闭设备！"+YsApplication.getNowTime());
                         send_state_all(device_info_retrun);
-                        charg_handler.postDelayed(charg_runable,60000);
+                        charg_handler.postDelayed(charg_runable,30000);
                 }
             }
     };

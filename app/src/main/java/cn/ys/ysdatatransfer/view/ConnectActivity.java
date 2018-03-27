@@ -1,14 +1,18 @@
 package cn.ys.ysdatatransfer.view;
 
 import android.Manifest;
+import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -32,6 +36,7 @@ import cn.ys.ysdatatransfer.R;
 import cn.ys.ysdatatransfer.base.YsApplication;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
+import cn.ys.ysdatatransfer.entity.Device_info;
 
 /**
  * Created by shizhiyuan on 2017/7/21.
@@ -39,7 +44,7 @@ import cn.ys.ysdatatransfer.business.YsCloudClientService;
 
 public class ConnectActivity extends YsBaseActivity {
 
-
+    Device_info device_info = new Device_info();
     private Button con_btn_connect;
     private Receiver receiver;
     private ProgressBar progressBar;
@@ -48,7 +53,19 @@ public class ConnectActivity extends YsBaseActivity {
     private  Button btn_get_path;
     private TextView  device_id;
     private static String string_device_pwd;
+    private YsCloudClientService myService;
     private final  static String default_key_path ="/storage/emulated/0/Download/keyconfig";
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            myService = ((YsCloudClientService.MyBinder) service).getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            myService = null;
+        }
+    };
     /**
      * 使用私钥进行解密
      */
@@ -95,6 +112,8 @@ public class ConnectActivity extends YsBaseActivity {
     protected void onStart() {
         super.onStart();
         initView();
+        device_info.setInfo_name("text");
+        device_info.setClient_id(YsApplication.getCLIENTID());
         receiver = new Receiver();
         //新添代码，在代码中注册广播接收程序
         IntentFilter filter = new IntentFilter();
@@ -102,8 +121,8 @@ public class ConnectActivity extends YsBaseActivity {
         registerReceiver(receiver, filter);
         //连续启动Service
         //连续启动Service
-        Intent intent1 = new Intent(this, YsCloudClientService.class);
-        startService(intent1);
+        final Intent intent = new Intent(this, YsCloudClientService.class);
+        bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
     }
     @Override
     public void initView() {
@@ -117,7 +136,7 @@ public class ConnectActivity extends YsBaseActivity {
         btn_get_path.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                get_keyconfig_and_jump(default_key_path);
             }
         });
         con_btn_connect.setOnClickListener(new View.OnClickListener() {
@@ -125,6 +144,7 @@ public class ConnectActivity extends YsBaseActivity {
             public void onClick(View v) {
                 progressBar.setVisibility(View.VISIBLE);
                 con_btn_connect.setText("正在启动宇时4G数传...");
+                showToast("正在连接服务器！");
                 con_btn_connect.setClickable(false);
                 con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
                 String uname = YsApplication.getUSERNAME();
@@ -139,6 +159,8 @@ public class ConnectActivity extends YsBaseActivity {
         con_btn_connect.setText("请先选择keyconfig文件！");
         progressBar.setVisibility(View.INVISIBLE);
         //   string_device_id = mSharedPreferences.getString("deviceID","-1");
+        con_btn_connect.setClickable(false);
+        con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
         myHandler.postDelayed(runnable_read,1000);
 
     }
@@ -147,7 +169,7 @@ public class ConnectActivity extends YsBaseActivity {
     private static final int NETUPDATE=10;
    private boolean get_keyconfig_and_jump(String path)
    {
-       Toast.makeText(this,"正在读取文件："+path,Toast.LENGTH_SHORT).show();
+       showToast("正在读取keyconfig文件....");
        try {
            Thread.sleep(500);
        } catch (InterruptedException e) {
@@ -156,7 +178,7 @@ public class ConnectActivity extends YsBaseActivity {
        String keyconfig= readFile(path);
        if(keyconfig == null)
        {
-           Toast.makeText(this,"打开keyconfig文件失败！",Toast.LENGTH_SHORT).show();
+           showToast("打开keyconfig文件失败,请检查设备keyconfig文件是否完整！");
            return false;
        }
        try
@@ -165,7 +187,7 @@ public class ConnectActivity extends YsBaseActivity {
                    Base64Helper.decode(keyconfig), privateKey), "UTF-8");
            if(string_device_pwd.length()!=20)
            {
-               Toast.makeText(this,"deviceid错误！",Toast.LENGTH_SHORT).show();
+               showToast("keyconfig文件异常！");
                return false;
            }
            Message tempMsg = myHandler.obtainMessage();
@@ -176,7 +198,7 @@ public class ConnectActivity extends YsBaseActivity {
        catch (Exception e)
        {
            e.printStackTrace();
-           Toast.makeText(this,"读取keyconfig异常！",Toast.LENGTH_SHORT).show();
+           showToast("读取keyconfig异常！");
            return false;
        }
             return  true;
@@ -216,6 +238,7 @@ public class ConnectActivity extends YsBaseActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        this.unbindService(serviceConnection);
         this.unregisterReceiver(receiver);
     }
 
@@ -254,11 +277,12 @@ public class ConnectActivity extends YsBaseActivity {
                 catch (RuntimeException e)
                 {
                 }
+                showToast("连接服务器成功！");
                Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
                 intent1.putExtra("deviceid",string_device_pwd);
                 startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
-                Toast.makeText(ConnectActivity.this, "宇时4G数传启动失败\r\n请检查网络是否畅通!", Toast.LENGTH_SHORT).show();
+                showToast("宇时4G数传启动失败\r\n请检查网络是否畅通!");
                 //2s后自动重连
                 try {
                     myHandler.removeCallbacks(runnable_connect);
@@ -270,5 +294,17 @@ public class ConnectActivity extends YsBaseActivity {
             }
 
         }
+    }
+    @Override
+    public void showToast(String msg) {
+        device_info.setInfo_state(msg);
+        try {
+            myService.send_state_all(device_info);
+        }
+      catch (RuntimeException e)
+      {
+          e.printStackTrace();
+      }
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 }

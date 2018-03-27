@@ -26,6 +26,7 @@ import com.alibaba.fastjson.JSONObject;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import cn.ys.ysdatatransfer.R;
+import cn.ys.ysdatatransfer.base.YsApplication;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
 import cn.ys.ysdatatransfer.business.YsDeal_Cmd;
@@ -34,6 +35,7 @@ import cn.ys.ysdatatransfer.entity.Device_info;
 
 
 public class MainActivity extends YsBaseActivity implements View.OnClickListener {
+    Device_info device_info = new Device_info();
     private Button main_btn_stop;
     private Button main_btn_start;
     private Button main_btn_disconnent;
@@ -111,6 +113,8 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
     @Override
     protected void onStart() {
         super.onStart();
+        device_info.setInfo_name("text");
+        device_info.setClient_id(YsApplication.getCLIENTID());
         setListener();
         final Intent intent = new Intent(this, YsCloudClientService.class);
         bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
@@ -195,15 +199,6 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.main_btn_subscribe:
-                myService.doSubscribeForDevId(deviceid);
-                Toast.makeText(this, "宇时4G数传服务启动成功！", Toast.LENGTH_SHORT).show();
-                set_click_state(false);
-                break;
-            case R.id.main_btn_publish:
-                set_click_state(true);
-                Toast.makeText(this, "宇时4G数传服务已停止！", Toast.LENGTH_SHORT).show();
-                break;
             case R.id.main_btn_disconnent:
                 try {
                     if (myService.DisConnectUnCheck()) {
@@ -236,7 +231,7 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                 if (returnCode != 0) {
                     //  myService.stop_tcp_listen();
                     set_click_state(true);
-                    Toast.makeText(MainActivity.this, "宇时4G数传连接设备失败！", Toast.LENGTH_SHORT).show();
+                    showToast( "宇时4G数传连接设备失败！");
                 }
             } else if (action.equals("onReceiveCmdEvent")) {
                 Bundle bundle = intent.getExtras();
@@ -252,16 +247,9 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
                     device_cmd.setCmd_name(jsonObject1.getString("cmd_name"));
                     device_cmd.setCmd_state(jsonObject1.getString("cmd_state"));
                     Log.d("宇时4G：","收到JSon："+device_cmd.toString());
-                    if(device_cmd.getCmd_name().equals("restart"))
-                    {
-                        main_btn_disconnent.performClick();
-                        return;
-                    }
-                  else {
                        Device_info device_info=YsDeal_Cmd.dealwithcmd(device_cmd);
                        if(device_info!=null)
                            myService.publishForDevIdInfo(device_info);
-                    }
                 }
                 catch(Exception e)
                 {
@@ -290,5 +278,17 @@ public class MainActivity extends YsBaseActivity implements View.OnClickListener
         this.unregisterReceiver(onSubscribeReceiver);
         timer_handler.removeCallbacks(runnable);
         this.unbindService(serviceConnection);
+    }
+    @Override
+    public void showToast(String msg) {
+        device_info.setInfo_state(msg);
+        try {
+            myService.send_state_all(device_info);
+        }
+        catch (RuntimeException e)
+        {
+            e.printStackTrace();
+        }
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 }
