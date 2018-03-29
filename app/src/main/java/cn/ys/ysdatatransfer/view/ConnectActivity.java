@@ -1,6 +1,5 @@
 package cn.ys.ysdatatransfer.view;
 
-import android.Manifest;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -9,19 +8,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.alibaba.fastjson.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,9 +32,13 @@ import java.io.InputStreamReader;
 import java.security.PrivateKey;
 
 import cn.ys.ysdatatransfer.R;
+import cn.ys.ysdatatransfer.base.PermissionUtil;
 import cn.ys.ysdatatransfer.base.YsApplication;
 import cn.ys.ysdatatransfer.base.YsBaseActivity;
+import cn.ys.ysdatatransfer.business.SignalStrengthsHandler;
 import cn.ys.ysdatatransfer.business.YsCloudClientService;
+import cn.ys.ysdatatransfer.business.YsDeal_Cmd;
+import cn.ys.ysdatatransfer.entity.Device_cmd;
 import cn.ys.ysdatatransfer.entity.Device_info;
 
 /**
@@ -47,6 +50,7 @@ public class ConnectActivity extends YsBaseActivity {
     Device_info device_info = new Device_info();
     private Button con_btn_connect;
     private Receiver receiver;
+    private OnSubscribeReceiver onSubscribeReceiver;
     private ProgressBar progressBar;
     private SharedPreferences mSharedPreferences;
     private SharedPreferences.Editor editor;
@@ -119,6 +123,13 @@ public class ConnectActivity extends YsBaseActivity {
         IntentFilter filter = new IntentFilter();
         filter.addAction("onConnectAck");
         registerReceiver(receiver, filter);
+        onSubscribeReceiver = new OnSubscribeReceiver();
+        //新添代码，在代码中注册广播接收程序
+        IntentFilter filter_n = new IntentFilter();
+        filter_n.addAction("onReceiveCmdEvent");
+        filter_n.addAction("onDisSubscribeAck");
+        filter_n.addAction("onReceiveCmdEvent");
+        registerReceiver(onSubscribeReceiver, filter);
         //连续启动Service
         //连续启动Service
         final Intent intent = new Intent(this, YsCloudClientService.class);
@@ -136,7 +147,11 @@ public class ConnectActivity extends YsBaseActivity {
         btn_get_path.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                get_keyconfig_and_jump(default_key_path);
+                if (PermissionUtil.isLacksOfPermission(PermissionUtil.PERMISSION[0])) {
+                    SignalStrengthsHandler signalStrengthsHandler = SignalStrengthsHandler.getInstance();
+                   // get_keyconfig_and_jump(default_key_path);
+                }
+                SignalStrengthsHandler signalStrengthsHandler = SignalStrengthsHandler.getInstance();
             }
         });
         con_btn_connect.setOnClickListener(new View.OnClickListener() {
@@ -162,7 +177,6 @@ public class ConnectActivity extends YsBaseActivity {
         con_btn_connect.setClickable(false);
         con_btn_connect.setBackgroundResource(R.drawable.cancleshape);
         myHandler.postDelayed(runnable_read,1000);
-
     }
 
 
@@ -238,32 +252,22 @@ public class ConnectActivity extends YsBaseActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        this.unbindService(serviceConnection);
-        this.unregisterReceiver(receiver);
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
+        this.unregisterReceiver(receiver);
+        this.unregisterReceiver(onSubscribeReceiver);
+        this.unbindService(serviceConnection);
     }
 
-    private static final int REQUEST_EXTERNAL_STORAGE = 1;
-    private static String[] PERMISSIONS_STORAGE = {
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
-    public void myPermission() {
-        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            // We don't have permission so prompt the user
-            ActivityCompat.requestPermissions(
-                    this,
-                    PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
-            );
-        }
-    }
+//    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+//    private static String[] PERMISSIONS_STORAGE = {
+//            Manifest.permission.READ_EXTERNAL_STORAGE,
+//            Manifest.permission.WRITE_EXTERNAL_STORAGE
+//    };
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             progressBar.setVisibility(View.INVISIBLE);
@@ -278,9 +282,9 @@ public class ConnectActivity extends YsBaseActivity {
                 {
                 }
                 showToast("连接服务器成功！");
-               Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
-                intent1.putExtra("deviceid",string_device_pwd);
-                startActivity(intent1);
+//               Intent intent1= new Intent(ConnectActivity.this, MainActivity.class);
+//                intent1.putExtra("deviceid",string_device_pwd);
+//                startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
                 showToast("宇时4G数传启动失败\r\n请检查网络是否畅通!");
                 //2s后自动重连
@@ -293,6 +297,44 @@ public class ConnectActivity extends YsBaseActivity {
                 myHandler.postDelayed(runnable_connect,4000);
             }
 
+        }
+    }
+    public class OnSubscribeReceiver extends BroadcastReceiver {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action.equals("onSubscribeAck")) {
+                Bundle bundle = intent.getExtras();
+                int messageId = bundle.getInt("messageId");
+                String devId = bundle.getString("CliendID");
+                int returnCode = bundle.getInt("returnCode");
+                if (returnCode != 0) {
+                    showToast( "宇时4G数传连接设备失败！");
+                }
+            }
+          else if (action.equals("onReceiveCmdEvent")) {
+                Bundle bundle = intent.getExtras();
+                String msg = "";
+                int messageId = bundle.getInt("messageId");
+                String topic = bundle.getString("topic");
+                String jsondata = bundle.getString("cmddata");
+                try {
+                    JSONObject jsonObject = JSONObject.parseObject(jsondata);
+                    JSONObject jsonObject1 = jsonObject.getJSONObject("deviceCmd");
+                    Device_cmd device_cmd = new Device_cmd();
+                    device_cmd.setClient_id(jsonObject1.getString("client_id"));
+                    device_cmd.setCmd_name(jsonObject1.getString("cmd_name"));
+                    device_cmd.setCmd_state(jsonObject1.getString("cmd_state"));
+                    Log.d("宇时4G：","收到JSon："+device_cmd.toString());
+                    Device_info device_info1= YsDeal_Cmd.dealwithcmd(device_cmd);
+                    if(device_info1!=null)
+                        myService.send_state_all(device_info1);
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+            }
         }
     }
     @Override

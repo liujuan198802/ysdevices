@@ -107,12 +107,11 @@ public class YsCrashHandler implements Thread.UncaughtExceptionHandler {
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
             }
-            Intent intent = new Intent(YsApplication.getInstance(), YsCloudClientService.class);
-            YsApplication.getInstance().getApplicationContext().stopService(intent);
-            Process.killProcess(Process.myPid());
-            System.exit(1);
         }
-
+        Intent intent = new Intent(YsApplication.getInstance(), YsCloudClientService.class);
+        YsApplication.getInstance().getApplicationContext().stopService(intent);
+        Process.killProcess(Process.myPid());
+        System.exit(1);
     }
 
     /**

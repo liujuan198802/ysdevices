@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import cn.Ysserver.entity.MqttPropertise;
+import cn.ys.ysdatatransfer.business.PWMUtils;
 import cn.ys.ysdatatransfer.view.LocationService;
 
 import static android.content.ContentValues.TAG;
@@ -90,6 +91,7 @@ public class YsApplication extends Application {
         locationService.registerListener(mListener);
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
         locationService.start();// 定位SDK
+        PWMUtils.init_pwm_mode();
         // start之后会默认发起一次定位请求，开发者无须判断isstart并主动调用request
     }
     public static String getNowTime(){
