@@ -1,10 +1,25 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        release {
+            storeFile file("Ys002android.jks")
+            storePassword '5234970.a'
+            keyAlias 'key1'
+            keyPassword '5234970.a'
+        }
+
+        debug {
+            storeFile file("Ys002android.jks")
+            storePassword '5234970.a'
+            keyAlias 'key1'
+            keyPassword '5234970.a'
+        }
+    }
     compileSdkVersion 26
     defaultConfig {
         applicationId "cn.ys.ysdatatransfer"
-        minSdkVersion 22
+        minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
         versionName "1.0.1"

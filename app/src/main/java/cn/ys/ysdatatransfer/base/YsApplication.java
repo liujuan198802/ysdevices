@@ -28,7 +28,6 @@ import java.util.Date;
 
 import cn.Ysserver.entity.MqttPropertise;
 import cn.ys.ysdatatransfer.business.PWMUtils;
-import cn.ys.ysdatatransfer.view.LocationService;
 
 import static android.content.ContentValues.TAG;
 
