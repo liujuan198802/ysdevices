@@ -268,6 +268,7 @@ public class ConnectActivity extends YsBaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        showToast("宇时4G即将停止服务....");
         this.unregisterReceiver(receiver);
         this.unregisterReceiver(onSubscribeReceiver);
         this.unbindService(serviceConnection);

@@ -169,9 +169,9 @@ public class YsCloudClientService extends Service {
             //充电类型 BatteryManager.BATTERY_PLUGGED_AC 表示是充电器，不是这个值，表示是 USB
             int plugged = intent.getIntExtra("plugged",0);
                 if(plugged!=0) {
-                    timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
                     stopTimer();
-                        device_info_retrun.setInfo_state("宇时4G数传正在工作..."+YsApplication.getNowTime());
+                    timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
+                    device_info_retrun.setInfo_state("宇时4G数传正在工作..."+YsApplication.getNowTime());
                         send_state_all(device_info_retrun);
                     }
                 else {
@@ -606,6 +606,7 @@ public class YsCloudClientService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopTimer();
         doDisConnect();
         close_com_port();
         udpClients_cmd.setUdpLife(false);
