@@ -24,6 +24,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -96,53 +98,86 @@ public class YsCloudClientService extends Service {
 
        }
     }
-    private  static int  timer_count = Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));;
-    private Runnable charg_runable = new Runnable() {
-        @Override
-        public void run() {
-            timer_count--;
-            device_info_retrun.setInfo_state("宇时4G数传将在"+timer_count+"S后关闭...."+YsApplication.getNowTime());
-            send_state_all(device_info_retrun);
-            Device_info device_info =new Device_info();
-            device_info.setClient_id(YsApplication.getCLIENTID());
-            device_info.setInfo_name("device_pos");
-            device_info.setInfo_state(YsApplication.get_pos());
-            send_state_all(device_info);
-            if(timer_count<=0)
-            {
-                device_info_retrun.setInfo_state("宇时4G数传将在即将关闭，谢谢使用...."+YsApplication.getNowTime());
-                send_state_all(device_info_retrun);
-                YsDeal_Cmd.shutdown_device();
-            }
-            charg_handler.postDelayed(this,1000);
+    /**
+     * 定时器 每隔一段时间执行一次
+     */
+    private Timer mTimer = null;
+    private TimerTask mTimerTask = null;
+    private boolean isStop = false;
+    private void startTimer() {
+        isStop = true;//定时器启动后，修改标识，关闭定时器的开关
+        if (mTimer == null) {
+            mTimer = new Timer();
         }
-    };
+        if (mTimerTask == null) {
+            mTimerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    do {
+                        timer_count--;
+                        device_info_retrun.setInfo_state("宇时4G数传将在"+timer_count+"S后关闭...."+YsApplication.getNowTime());
+                        send_state_all(device_info_retrun);
+                        Device_info device_info =new Device_info();
+                        device_info.setClient_id(YsApplication.getCLIENTID());
+                        device_info.setInfo_name("device_pos");
+                        device_info.setInfo_state(YsApplication.get_pos());
+                        send_state_all(device_info);
+                        if(timer_count<=0)
+                        {
+                            device_info_retrun.setInfo_state("宇时4G数传将在即将关闭，谢谢使用...."+YsApplication.getNowTime());
+                            send_state_all(device_info_retrun);
+                            YsDeal_Cmd.shutdown_device();
+                        }
+                        try {
+                            Thread.sleep(1000);//3秒后再次执行
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } while (isStop);
+
+                }
+            };
+        }
+
+        if (mTimer != null && mTimerTask != null) {
+            Log.d("tag", "mTimer.schedule(mTimerTask, delay)");
+            mTimer.schedule(mTimerTask, 0);//执行定时器中的任务
+        }
+    }
+    /**
+     * 停止定时器，初始化定时器开关
+     */
+    private void stopTimer() {
+
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
+        if (mTimerTask != null) {
+            mTimerTask.cancel();
+            mTimerTask = null;
+        }
+        isStop = false;//重新打开定时器开关
+        Log.d("tag", "isStop="+isStop);
+
+    }
+    private  static int  timer_count = Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));;
     BroadcastReceiver powerbroadcastReceiver= new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             //充电类型 BatteryManager.BATTERY_PLUGGED_AC 表示是充电器，不是这个值，表示是 USB
             int plugged = intent.getIntExtra("plugged",0);
-//            device_info_retrun.setInfo_state("plugged:"+plugged+YsApplication.getNowTime());
-//            send_state_all(device_info_retrun);
                 if(plugged!=0) {
-                    //DoSomeThing
+                    timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
+                    stopTimer();
                         device_info_retrun.setInfo_state("宇时4G数传正在工作..."+YsApplication.getNowTime());
                         send_state_all(device_info_retrun);
-                      timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
-                        try {
-                            charg_handler.removeCallbacks(charg_runable);
-                        }
-                        catch (RuntimeException e)
-                        {
-                            e.printStackTrace();
-                        }
                     }
                 else {
-                        timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
+                       startTimer();
                         device_info_retrun.setInfo_state("宇时4G数传电源已断开..."+YsApplication.getNowTime());
                         send_state_all(device_info_retrun);
-                        charg_handler.postDelayed(charg_runable,1000);
                 }
             }
     };

@@ -2,7 +2,6 @@ package cn.ys.ysdatatransfer.base;
 
 import android.app.Application;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -85,7 +84,7 @@ public class YsApplication extends Application {
             e.printStackTrace();
         }
         locationService = new LocationService(this);
-        mVibrator = (Vibrator) getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);
+//        mVibrator = (Vibrator) getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);
         locationService.registerListener(mListener);
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
         locationService.start();// 定位SDK
