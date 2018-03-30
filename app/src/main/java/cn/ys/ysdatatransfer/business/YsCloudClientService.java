@@ -92,14 +92,29 @@ public class YsCloudClientService extends Service {
             publishForDevIdInfo(device_info);
         }
        catch (RuntimeException e)
-       {}
+       {
+
+       }
     }
+    private  static int  timer_count = Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));;
     private Runnable charg_runable = new Runnable() {
         @Override
         public void run() {
-            device_info_retrun.setInfo_state("宇时4G数传即将关闭，谢谢使用！"+YsApplication.getNowTime());
+            timer_count--;
+            device_info_retrun.setInfo_state("宇时4G数传将在"+timer_count+"S后关闭...."+YsApplication.getNowTime());
             send_state_all(device_info_retrun);
-           YsDeal_Cmd.shutdown_device();
+            Device_info device_info =new Device_info();
+            device_info.setClient_id(YsApplication.getCLIENTID());
+            device_info.setInfo_name("device_pos");
+            device_info.setInfo_state(YsApplication.get_pos());
+            send_state_all(device_info);
+            if(timer_count<=0)
+            {
+                device_info_retrun.setInfo_state("宇时4G数传将在即将关闭，谢谢使用...."+YsApplication.getNowTime());
+                send_state_all(device_info_retrun);
+                YsDeal_Cmd.shutdown_device();
+            }
+            charg_handler.postDelayed(this,1000);
         }
     };
     BroadcastReceiver powerbroadcastReceiver= new BroadcastReceiver() {
@@ -112,8 +127,9 @@ public class YsCloudClientService extends Service {
 //            send_state_all(device_info_retrun);
                 if(plugged!=0) {
                     //DoSomeThing
-                        device_info_retrun.setInfo_state("宇时4G已通电..."+YsApplication.getNowTime());
+                        device_info_retrun.setInfo_state("宇时4G数传正在工作..."+YsApplication.getNowTime());
                         send_state_all(device_info_retrun);
+                      timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
                         try {
                             charg_handler.removeCallbacks(charg_runable);
                         }
@@ -123,9 +139,10 @@ public class YsCloudClientService extends Service {
                         }
                     }
                 else {
-                        device_info_retrun.setInfo_state("宇时4G已经断电，将在30S后关闭设备！"+YsApplication.getNowTime());
+                        timer_count =Integer.valueOf(MqttPropertise.getproperty("shoutdown_time"));
+                        device_info_retrun.setInfo_state("宇时4G数传电源已断开..."+YsApplication.getNowTime());
                         send_state_all(device_info_retrun);
-                        charg_handler.postDelayed(charg_runable,30000);
+                        charg_handler.postDelayed(charg_runable,1000);
                 }
             }
     };

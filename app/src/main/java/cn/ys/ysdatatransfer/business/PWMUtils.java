@@ -54,14 +54,14 @@ public class PWMUtils {
         }
         try {
             pwm1 = Integer.valueOf(MqttPropertise.getproperty("default_pwm1"));
-            pwm2 = Integer.valueOf(MqttPropertise.getproperty("default_pwm1"));
-            pwm3 = Integer.valueOf(MqttPropertise.getproperty("default_pwm1"));
+            pwm2 = Integer.valueOf(MqttPropertise.getproperty("default_pwm2"));
+            pwm3 = Integer.valueOf(MqttPropertise.getproperty("default_pwm3"));
             set_pwm(pwm1,pwm2,pwm3);
         }
         catch (NumberFormatException e)
         {
         }
-        String gpio_en =MqttPropertise.getproperty("default_gpio1");
+        String gpio_en =MqttPropertise.getproperty("default_gpio");
         if(gpio_en!=null && !gpio_en.equals("0"))
         {
             gpio_state = true;

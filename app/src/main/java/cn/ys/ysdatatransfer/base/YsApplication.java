@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
@@ -97,17 +96,6 @@ public class YsApplication extends Application {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss");
         Date date = new Date(System.currentTimeMillis());
         return simpleDateFormat.format(date);
-    }
-    public  void  sendtxt_udp_mqtt(String info_name,String info_state )
-    {
-        Intent intent = new Intent();
-        intent.setAction("udp_mqtt_send");//用隐式意图来启动广播
-        Bundle bundle = new Bundle();
-        bundle.putString("info_name", info_name);
-        bundle.putString("info_state", info_state);
-        bundle.putString("clientid",CLIENTID);
-        intent.putExtras(bundle);
-        this.getApplicationContext().sendBroadcast(intent);
     }
     // wifi热点开关
     public boolean setWifiApEnabled(boolean enabled, WifiManager wifiManager, String ap_name, String ap_pwd) {
@@ -243,6 +231,12 @@ public class YsApplication extends Application {
         public void onReceiveLocation(BDLocation location) {
             // TODO Auto-generated method stub
             if (null != location && location.getLocType() != BDLocation.TypeServerError) {
+                if((location_time ==null)|| (!location_time.equals(location.getTime())))
+                {
+                    Intent intent = new Intent();
+                    intent.setAction("onGetNewPoosition");//用隐式意图来启动广播
+                    instance.sendBroadcast(intent);
+                }
                 location_time =location.getTime();
                 location_alt =Double.toString(location.getAltitude());
                 location_lat = Double.toString(location.getLatitude());

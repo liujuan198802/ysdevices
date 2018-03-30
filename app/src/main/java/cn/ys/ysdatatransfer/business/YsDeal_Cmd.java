@@ -110,12 +110,12 @@ public class YsDeal_Cmd {
                 if(!pwm3.equals("0"))
                 {
                     PWMUtils.set_gpio_out(true);
-                    device_info.setInfo_state("set gpio hign!");
+                    device_info.setInfo_state("set gpio high");
                 }
                 else
                 {
                     PWMUtils.set_gpio_out(false);
-                    device_info.setInfo_state("set pwm low!");
+                    device_info.setInfo_state("set gpio low");
                 }
             return  device_info;
         }
@@ -124,7 +124,7 @@ public class YsDeal_Cmd {
             String   pwm3 = device_cmd.getCmd_state();
            device_info.setInfo_name("get_gpio_ack");
            if(PWMUtils.getGpio_state())
-            device_info.setInfo_state("hign");
+            device_info.setInfo_state("high");
            else
                device_info.setInfo_state("low");
             return  device_info;
@@ -133,12 +133,12 @@ public class YsDeal_Cmd {
             {
                 try{
                     JSONObject jsonObject = new JSONObject(device_cmd.getCmd_state());
-                  String   property_name =jsonObject.getString("property_name");
-                    String   property_vale =jsonObject.getString("property_vale");
+                      String   property_name =jsonObject.getString("property_name");
+                    String   property_vale =jsonObject.getString("property_value");
                     MqttPropertise.setproperty(property_name,property_vale);
                     JSONObject jsonObject1 = new JSONObject();
                     jsonObject1.put("property_name",property_name);
-                    jsonObject1.put("property_vale",  MqttPropertise.getproperty(property_name));
+                    jsonObject1.put("property_value",  MqttPropertise.getproperty(property_name));
                     jsonObject1.put("property_text", "重启设备，参数生效!");
                     device_info.setInfo_name("set_property_ack");
                     device_info.setInfo_state(jsonObject1.toString());
@@ -156,7 +156,7 @@ public class YsDeal_Cmd {
                String value = MqttPropertise.getproperty(device_cmd.getCmd_state());
                 JSONObject jsonObject1 = new JSONObject();
                 jsonObject1.put("property_name",device_cmd.getCmd_state());
-                jsonObject1.put("property_vale", value);
+                jsonObject1.put("property_value", value);
                 device_info.setInfo_name("get_property_ack");
                 device_info.setInfo_state(jsonObject1.toString());
                 return device_info;
@@ -171,6 +171,13 @@ public class YsDeal_Cmd {
             if(device_cmd.getCmd_name().equals("get_sys_info"))
             {
             }
+        if(device_cmd.getCmd_name().equals("enable_serail2"))
+        {
+            MqttPropertise.setproperty("enable_serail2",device_cmd.getCmd_state());
+            device_info.setInfo_name("enable_serail2");
+            device_info.setInfo_state(MqttPropertise.getproperty("enable_serail2"));
+            return device_info;
+        }
         if(device_cmd.getCmd_name().equals("get_pos"))
         {
             device_info.setClient_id(deviceid);

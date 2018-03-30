@@ -18,7 +18,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.alibaba.fastjson.JSONObject;
 
@@ -89,6 +88,15 @@ public class ConnectActivity extends YsBaseActivity {
             con_btn_connect.performClick();
         }
     };
+    Runnable runnable_send_sys_info = new Runnable(){
+        public void run(){
+            Device_info device_info =new Device_info();
+            device_info.setClient_id(YsApplication.getCLIENTID());
+            device_info.setInfo_name("device_pos");
+            device_info.setInfo_state(YsApplication.get_pos());
+            showToast(device_info.toString());
+        }
+    };
      Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
@@ -110,12 +118,6 @@ public class ConnectActivity extends YsBaseActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        initView();
         device_info.setInfo_name("text");
         device_info.setClient_id(YsApplication.getCLIENTID());
         receiver = new Receiver();
@@ -129,11 +131,18 @@ public class ConnectActivity extends YsBaseActivity {
         filter_n.addAction("onReceiveCmdEvent");
         filter_n.addAction("onDisSubscribeAck");
         filter_n.addAction("onReceiveCmdEvent");
-        registerReceiver(onSubscribeReceiver, filter);
+        filter_n.addAction("onGetNewPoosition");
+        registerReceiver(onSubscribeReceiver, filter_n);
         //连续启动Service
         //连续启动Service
-        final Intent intent = new Intent(this, YsCloudClientService.class);
+        Intent intent = new Intent(this, YsCloudClientService.class);
         bindService(intent, serviceConnection, Service.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initView();
     }
     @Override
     public void initView() {
@@ -141,6 +150,7 @@ public class ConnectActivity extends YsBaseActivity {
         mSharedPreferences = getSharedPreferences("keypath", MODE_PRIVATE);
         editor = mSharedPreferences.edit();
         con_btn_connect = (Button) findViewById(R.id.con_btn_connect);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         btn_get_path = (Button)   findViewById(R.id.btn_choosekey);
         device_id  = (TextView) findViewById(R.id.textView);
@@ -271,7 +281,7 @@ public class ConnectActivity extends YsBaseActivity {
     public class Receiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             progressBar.setVisibility(View.INVISIBLE);
-            con_btn_connect.setText("启动宇时4G数传");
+            con_btn_connect.setText("正在启动宇时4G数传...");
             con_btn_connect.setClickable(true);
             con_btn_connect.setBackgroundResource(R.drawable.button_shape);
             if (intent.getIntExtra("onConnectAckreturnCode", 1) == 0) {
@@ -286,7 +296,7 @@ public class ConnectActivity extends YsBaseActivity {
 //                intent1.putExtra("deviceid",string_device_pwd);
 //                startActivity(intent1);
             } else if (intent.getIntExtra("onConnectAckreturnCode", 1) == 1) {
-                showToast("宇时4G数传启动失败\r\n请检查网络是否畅通!");
+                showToast("宇时4G数传启动失败,请检查网络是否畅通!");
                 //2s后自动重连
                 try {
                     myHandler.removeCallbacks(runnable_connect);
@@ -310,6 +320,11 @@ public class ConnectActivity extends YsBaseActivity {
                 if (returnCode != 0) {
                     showToast( "宇时4G数传连接设备失败！");
                 }
+            return;
+            }
+            else if (action.equals("onGetNewPoosition")) {
+                myHandler.postDelayed(runnable_send_sys_info,200);
+                return;
             }
           else if (action.equals("onReceiveCmdEvent")) {
                 Bundle bundle = intent.getExtras();
@@ -347,6 +362,6 @@ public class ConnectActivity extends YsBaseActivity {
       {
           e.printStackTrace();
       }
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+       // Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 }
