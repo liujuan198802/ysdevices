@@ -86,9 +86,9 @@ public class PWMUtils {
         pwm1 = pwm10;
         pwm2 = pwm20;
         pwm3 = pwm30;
-        String  cmd1 = pwm_no1 +pwm1+pwm_cmd;
-        String  cmd2 = pwm_no2 +pwm2+pwm_cmd;
-        String  cmd3 = pwm_no3 +pwm3+pwm_cmd;
+        String  cmd1 = pwm_no1 +pwm1*0.005+pwm_cmd;
+        String  cmd2 = pwm_no2 +pwm2*0.005+pwm_cmd;
+        String  cmd3 = pwm_no3 +pwm3*0.005+pwm_cmd;
         writeToFile(pwm_dvice,cmd1);
         writeToFile(pwm_dvice,cmd2);
         writeToFile(pwm_dvice,cmd3);

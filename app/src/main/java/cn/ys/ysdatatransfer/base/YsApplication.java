@@ -84,7 +84,6 @@ public class YsApplication extends Application {
             e.printStackTrace();
         }
         locationService = new LocationService(this);
-//        mVibrator = (Vibrator) getApplicationContext().getSystemService(Service.VIBRATOR_SERVICE);
         locationService.registerListener(mListener);
         locationService.setLocationOption(locationService.getDefaultLocationClientOption());
         locationService.start();// 定位SDK
