@@ -107,7 +107,7 @@ public class UDPClient implements Runnable{
             while (udpLife) {
                 try {
                     socket.receive(packetRcv);
-                    sendMsgThread.putMsg(packetRcv.getData());
+               
                     serialPort.getOutputStream().write(packetRcv.getData(),0,packetRcv.getLength());
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -139,9 +139,9 @@ public class UDPClient implements Runnable{
                         byte[] msg = sendMsgQuene.poll();
                         if (socket != null)
                             try {
-                                DatagramPacket sendPacket = new DatagramPacket(msg, msg.length,
+                                packetSend = new DatagramPacket(msg, msg.length,
                                         InetAddress.getByName(hostIp), udpPort);
-                                socket.send(sendPacket);
+                                socket.send(packetSend);
                             } catch (UnknownHostException e) {
                                 e.printStackTrace();
                                 System.out.println("发送失败");

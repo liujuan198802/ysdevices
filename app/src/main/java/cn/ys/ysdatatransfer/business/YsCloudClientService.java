@@ -211,16 +211,17 @@ public class YsCloudClientService extends Service {
             com_sendMsgThread.start();
             while(!isInterrupted()) {
                 int size;
-                Log.v(TAG, "串口线程已启动！");
+                Log.d(TAG, "串口线程已启动！");
                 try {
                     byte[] buffer = new byte[512];
                     if (mInputStream == null) return;
                     while((size=mInputStream.read(buffer)) != -1){
                         if (size > 0) {
                             data_count_com_get+=size;
-                         //   Log.v(TAG, "receive data :"+buffer.toString());
+                            Log.d(TAG, port_num+"com receive data,size:"+size+buffer.toString() );
                             byte[] data = new byte[size];
                             System.arraycopy(buffer, 0, data, 0, size);
+                            Log.d(TAG, port_num+"com receive data,size:"+size+data.toString() );
                             udpClient.send(data);
                             if(port_num==1)
                             {
@@ -254,7 +255,7 @@ public class YsCloudClientService extends Service {
             public void run() {
                 synchronized (this) {
                     while (send) {
-                        Log.i("串口发送", "串口发送");
+                        Log.d("串口发送", "串口发送线程已启动");
                         // 当队列里的消息发送完毕后，线程等待
                         while (sendMsgQuene.size() > 0) {
                             byte[] msg = sendMsgQuene.poll();
@@ -368,6 +369,8 @@ public class YsCloudClientService extends Service {
                 ExecutorService exec = Executors.newCachedThreadPool();
                 exec.execute(udpClients1);
                 mReadThread_1 = new ReadThread(mSerialPort_1, 1,udpClients1);
+                mReadThread_1.start();
+                udpClients1.send(("I am serail1\'s udp client..."+YsApplication.getNowTime()).getBytes("GBK"));
        } catch (SecurityException e) {
                 //
                 e.printStackTrace();
@@ -382,7 +385,7 @@ public class YsCloudClientService extends Service {
                 ExecutorService exec = Executors.newCachedThreadPool();
                 exec.execute(udpClients2);
                 mReadThread_2 = new ReadThread(mSerialPort_2, 2,udpClients2);
-
+                udpClients2.send(("I am serail2\'s udp client..."+YsApplication.getNowTime()).getBytes("GBK"));
                     } catch (SecurityException e) {
                 //
                 e.printStackTrace();
